@@ -14,7 +14,7 @@ function mkSaver(file,get,minMs){let dirty=0,tm=null,wip=0,ms=0,bakAt=0;
  return{mark:()=>{dirty=1;if(!tm)tm=setTimeout(flush,Math.max(minMs,ms*4))},flush,ms:()=>ms}}
 let MUT=0;
 const F=process.env.DATA_FILE||'data.json',ADMIN=process.env.ADMIN_PIN||'1234',KEY=process.env.GOOGLE_MAPS_KEY||'',PUB=path.join(__dirname,'public');
-let db={topups:{},tx:{},customers:{},rests:{},orders:{},rides:{},drivers:{},tickets:{},staff:{},offers:{},cards:{},apps:{},cardorders:{},wd:{},incw:{},ctop:{},ctx:{},cfg:{base:1500,km:700,min:3000,foodKm:400,auto:1,maxKm:10}};
+let db={codes:{},exp:{},topups:{},tx:{},customers:{},rests:{},orders:{},rides:{},drivers:{},tickets:{},staff:{},offers:{},cards:{},apps:{},cardorders:{},wd:{},incw:{},ctop:{},ctx:{},cfg:{base:1500,km:700,min:3000,foodKm:400,auto:1,maxKm:10}};
 {const L0=loadJSON(F);if(L0)Object.assign(db,L0)}
 db.cfg={maxDev:3,vpnBlock:1,timeGuard:1,timeTol:3,appPct:15,restPct:5,taxiPct:5,minBal:-15000,pay:[],minWd:15000,rt:[{id:'eco',n:'توفير',d:'التكسي الأوفر',m:1,g:'taxi'},{id:'super',n:'سوبر',d:'الخيار الأفضل',m:1.18,g:'taxi'},{id:'plus',n:'بلس',d:'راحة أكثر',m:1.3,g:'taxi'},{id:'box',n:'بوكس',d:'توصيل طرود وأغراض',m:1.1,g:'box'}],...db.cfg};if(!db.cfg.mig5){db.cfg.mig5=1;db.cfg.restPct=5;db.cfg.taxiPct=5}db.wd=db.wd||{};db.incw=db.incw||{};db.ctop=db.ctop||{};db.ctx=db.ctx||{};db.vars=db.vars||{};
 for(const[k,x]of Object.entries({maintenance:{v:0,t:'b',pub:1,d:'وضع الصيانة: يوقف الطلبات الجديدة من الزبائن ويعرض لهم رسالة'},maintMsg:{v:'التطبيق في صيانة قصيرة، نعود قريبًا.',t:'s',pub:1,d:'رسالة الصيانة'},banner:{v:'',t:'s',pub:1,d:'شريط إعلان أعلى كل التطبيقات (فارغ = مخفي)'},rlPerMin:{v:240,t:'n',pub:0,d:'حد طلبات المستخدم الواحد في الدقيقة'},bumpMs:{v:350,t:'n',pub:0,d:'تأخير بث التحديثات الفورية (مللي ثانية) — ارفعه عند الضغط العالي'},maxSSE:{v:20000,t:'n',pub:0,d:'أقصى اتصالات بث مباشر؛ الزائد يعمل بالاستطلاع'},archiveDays:{v:0,t:'n',pub:0,d:'أرشفة الطلبات/الرحلات المنتهية الأقدم من N يوم إلى مجلد archive (0 = إيقاف). يبقي السيرفر سريعًا مع نمو السجل؛ الرصيد والمحاسبة لا تتأثر لكن الأقدم يختفي من اللوحة'}}))if(!db.vars[k])db.vars[k]={id:k,...x,at:Date.now()};
@@ -75,7 +75,7 @@ function devCheck(id,h){const c=db.customers[id];if(!c)return false;const d=cdev
  const x=c.devs[d];if(!x||x.st)return false;
  if(x.ip!=ip){x.ip=ip;x.lat=now}x.last=now;return true}
 const who=h=>{if(h['x-role']=='customer')h['x-id']=sid(h['x-token'])};
-const W={customer:['orders','rides','tickets','apps','cardorders','ctop'],driver:['orders','rides','drivers','topups','wd'],rest:['rests','orders'],support:['orders','rides','tickets','drivers','apps','cardorders','topups','wd','ctop'],admin:['vars','cdev','rests','orders','rides','drivers','tickets','staff','cfg','offers','cards','apps','cardorders','topups','wd','wallet','incw','ctop','cwallet']};
+const W={customer:['orders','rides','tickets','apps','cardorders','ctop'],driver:['orders','rides','drivers','topups','wd'],rest:['rests','orders'],support:['orders','rides','tickets','drivers','apps','cardorders','topups','wd','ctop'],admin:['vars','cdev','rests','orders','rides','drivers','tickets','staff','cfg','offers','cards','apps','cardorders','topups','wd','wallet','incw','ctop','cwallet','exp']};
 const LK={},RL={};
 const lk=(k,f)=>{const n=Date.now(),e=LK[k]||(LK[k]={n:0,t:n});if(n-e.t>6e5){e.n=0;e.t=n}if(f===1)e.n++;else if(f===0)e.n=0;return e.n>=10};
 const eq=(a,b)=>{if(a==null||b==null||a===''||b==='')return false;a=Buffer.from(String(a));b=Buffer.from(String(b));return a.length==b.length&&cr.timingSafeEqual(a,b)};
@@ -119,22 +119,22 @@ const E0={};
 function custParts(i,I){const orders=I.co[i]||E0,rides=I.cr[i]||E0;
  const ids=new Set(),live=new Set();for(const k in orders){const o=orders[k],d=o.did;if(d&&db.drivers[d]){ids.add(d);if(o.st>=0&&o.st<4)live.add(d)}}for(const k in rides){const o=rides[k],d=o.did;if(d&&db.drivers[d]){ids.add(d);if(o.st>=0&&o.st<4)live.add(d)}}
  const drivers={};for(const d of ids){const x=db.drivers[d];drivers[d]={id:d,n:x.n,ph:x.ph,car:x.car,plate:x.plate,color:x.color,img:x.img,loc:live.has(d)?x.loc:undefined}}
- return{orders,rides,tickets:I.ct[i]||E0,apps:I.ca[i]||E0,cardorders:I.cc[i]||E0,me:{bal:(db.customers[i]||{}).bal||0},ctop:I.cp[i]||E0,ctx:I.cx[i]||E0,drivers}}
+ return{orders,rides,tickets:I.ct[i]||E0,apps:I.ca[i]||E0,cardorders:clean(I.cc[i]||E0,['cost','by']),me:{bal:(db.customers[i]||{}).bal||0},ctop:I.cp[i]||E0,ctx:I.cx[i]||E0,drivers}}
 const rsOf=I=>frag('rs',()=>clean(db.rests,['pin']));
 function view(h){const r=h['x-role'],i=h['x-id'],I=ix();
- if(r=='admin')return db;
- if(r=='support')return{...db,customers:clean(db.customers,['devs','sess','att']),rests:rsOf(I),drivers:clean(db.drivers,['pin','tfa','tfaP','tl']),staff:{},vars:PV()};
+ if(r=='admin')return{...db,codes:codeSum()};
+ if(r=='support')return{...db,customers:clean(db.customers,['devs','sess','att']),rests:rsOf(I),drivers:clean(db.drivers,['pin','tfa','tfaP','tl']),staff:{},exp:{},codes:{},cards:clean(db.cards,['cost','v']),cardorders:clean(db.cardorders,['cost']),vars:PV()};
  if(r=='rest'){const os=I.ro[i]||E0,ids=[...new Set(Object.values(os).map(v=>v.did).filter(d=>d&&db.drivers[d]))];return{cfg:pubc(db.cfg),rests:{[i]:db.rests[i]},orders:os,drivers:Object.fromEntries(ids.map(d=>{const x=db.drivers[d];return[d,{id:d,n:x.n,ph:x.ph,car:x.car,loc:x.loc,locAt:x.locAt}]}))}}
  if(r=='driver'){const me=db.drivers[i],dm=me?(()=>{const x={...me};['pin','tfa','tfaP','tl'].forEach(f=>delete x[f]);x.tfaOn=me.tfa?1:0;return x})():undefined;
   return{cfg:{...db.cfg,vars:PV()},topups:I.dt[i]||E0,tx:I.dx[i]||E0,wd:I.dw[i]||E0,incw:I.di[i]||E0,rests:rsOf(I),orders:clean({...(I.do[i]||E0),...I.pO},['rnote']),rides:clean({...(I.dr[i]||E0),...I.pR},['rnote']),drivers:{[i]:dm}}}
- return{cfg:pubc(db.cfg),rests:rsOf(I),...custParts(i,I),offers:db.offers,cards:db.cards}}
+ return{cfg:pubc(db.cfg),rests:rsOf(I),...custParts(i,I),offers:db.offers,cards:JSON.parse(cardsPub())}}
 // نسخة JSON جاهزة: الأجزاء المشتركة (إعدادات/مطاعم/عروض) تُحوَّل لنص مرة واحدة لكل تغيير
 function viewJSON(h){const R=h['x-role'];
  if(R=='driver'){const I=ix(),i=h['x-id'],me=db.drivers[i],J=JSON.stringify;if(!me)return J(view(h));const dm={...me};['pin','tfa','tfaP','tl'].forEach(f=>delete dm[f]);dm.tfaOn=me.tfa?1:0;
   return'{"cfg":'+frag('dc',()=>J({...db.cfg,vars:PV()}))+',"topups":'+J(I.dt[i]||E0)+',"tx":'+J(I.dx[i]||E0)+',"wd":'+J(I.dw[i]||E0)+',"incw":'+J(I.di[i]||E0)+',"rests":'+frag('fr',()=>J(rsOf(I)))+',"orders":'+J(clean({...(I.do[i]||E0),...I.pO},['rnote']))+',"rides":'+J(clean({...(I.dr[i]||E0),...I.pR},['rnote']))+',"drivers":{'+J(i)+':'+J(dm)+'}}'}
  if(R!='customer')return JSON.stringify(view(h));
  const I=ix(),p=custParts(h['x-id'],I),J=JSON.stringify;
- return'{"cfg":'+frag('fc',()=>J(pubc(db.cfg)))+',"rests":'+frag('fr',()=>J(rsOf(I)))+',"orders":'+J(p.orders)+',"rides":'+J(p.rides)+',"tickets":'+J(p.tickets)+',"offers":'+frag('fo',()=>J(db.offers))+',"cards":'+frag('fk',()=>J(db.cards))+',"apps":'+J(p.apps)+',"cardorders":'+J(p.cardorders)+',"me":'+J(p.me)+',"ctop":'+J(p.ctop)+',"ctx":'+J(p.ctx)+',"drivers":'+J(p.drivers)+'}'}
+ return'{"cfg":'+frag('fc',()=>J(pubc(db.cfg)))+',"rests":'+frag('fr',()=>J(rsOf(I)))+',"orders":'+J(p.orders)+',"rides":'+J(p.rides)+',"tickets":'+J(p.tickets)+',"offers":'+frag('fo',()=>J(db.offers))+',"cards":'+cardsPub()+',"apps":'+J(p.apps)+',"cardorders":'+J(p.cardorders)+',"me":'+J(p.me)+',"ctop":'+J(p.ctop)+',"ctx":'+J(p.ctx)+',"drivers":'+J(p.drivers)+'}'}
 const VC=new Map();setInterval(()=>{for(const[k,e]of VC)if(e.m!==MUT)VC.delete(k)},3e4).unref();
 const inm=(q,t)=>String(q.headers['if-none-match']||'').split(',').some(x=>x.trim().replace(/^W\//,'')===t);
 function sendView(q,s){const h=q.headers,key=h['x-role']+'|'+(h['x-id']||''),now=Date.now();let e=VC.get(key);
@@ -160,6 +160,44 @@ function cust(k,v,nw){const c=db.cfg,o={cid:v.cid};if(nw){o.st=0;o.at=Date.now()
  if(k=='tickets'){Object.assign(o,{cn:S(v.cn,60),cp:S(v.cp,30),oid:S(v.oid,40),msg:S(v.msg,1000)});return o}
  if(k=='apps'){const dc={};Object.entries(v.docs&&typeof v.docs=='object'?v.docs:{}).slice(0,12).forEach(([a,b])=>{if(/^\/u\/[a-f0-9]{32}\.\w+$/.test(String(b)))dc[S(a,20)]=b});Object.assign(o,{type:S(v.type,20),n:S(v.n,60),ph:S(v.ph,30),city:S(v.city,60),car:S(v.car,60),plate:S(v.plate,30),docs:dc});return o}
  return null}
+/* ===== مصاريف/إيرادات يدوية متكررة شهريًا (إيجار، رواتب، اشتراكات سيرفرات) ===== */
+function nextMonth(ts){const d=new Date(ts),day=Math.min(d.getDate(),28),n=new Date(d.getFullYear(),d.getMonth()+1,day,d.getHours(),d.getMinutes(),d.getSeconds());return +n}
+function runRecurring(now){now=now||Date.now();let made=0;db.exp=db.exp||{};
+ for(const e of Object.values(db.exp)){if(!e.rec||e.src||!e.nx)continue;let g=0;
+  while(e.nx<=now&&g++<24){const id='r'+e.id.slice(0,20)+'_'+e.nx.toString(36);if(!db.exp[id]){db.exp[id]={id,t:e.t,cat:e.cat,amt:e.amt,n:e.n,at:e.nx,by:'auto',cr:now,src:e.id};made++}e.nx=nextMonth(e.nx)}}
+ return made}
+setInterval(()=>{if(runRecurring()){save();bump()}},36e5).unref();
+setTimeout(()=>{if(runRecurring()){save();bump()}},3e3).unref();
+/* ===== مخزون الأكواد التسلسلية (بطاقات / ألعاب / كروت شحن) + التسليم الفوري + الاسترداد ===== */
+const ckey=x=>String(x==null?'':x).toUpperCase().replace(/[\s-]/g,'');
+let CKS=null;
+function ckSet(){if(!CKS){CKS=new Set();for(const c of Object.values(db.codes||{})){for(const x of c.a||[])CKS.add(ckey(x));for(const x of c.s||[])CKS.add(ckey(x.c))}}return CKS}
+const cbox=id=>{db.codes=db.codes||{};return db.codes[id]||(db.codes[id]={a:[],s:[]})};
+const stockOf=id=>{const c=db.codes&&db.codes[id];return c&&c.a?c.a.length:0};
+function codeSum(){const o={};for(const k in db.codes||{}){const c=db.codes[k];o[k]={a:(c.a||[]).length,s:(c.s||[]).length}}return o}
+function cardsPub(){return frag('fkp',()=>JSON.stringify(Object.fromEntries(Object.entries(db.cards||{}).filter(([k,c])=>c.kind!='wallet'&&c.kind!='cap').map(([k,c])=>{const x={...c};delete x.cost;delete x.v;if(c.auto)x.stock=stockOf(k);return[k,x]}))))}
+function takeCode(id,meta){const c=db.codes&&db.codes[id];if(!c||!c.a||!c.a.length)return null;const code=c.a.shift();c.s.push({c:code,...meta,at:Date.now()});CV++;return code}
+function deliver(v,id,cid,cc){const code=takeCode(cc.id,{cid,oid:id});v.code=code;v.st=1;v.dat=Date.now();v.by='auto';if(cc.cost!=null&&cc.cost!=='')v.cost=+cc.cost;return code}
+const ALPH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+function genCode(g,l){let o=[];for(let i=0;i<g;i++){let p='';for(let j=0;j<l;j++)p+=ALPH[cr.randomInt(ALPH.length)];o.push(p)}return o.join('-')}
+function codesOp(h,b){const cc=db.cards[String(b.card||'')];const op=b.op;
+ if(op=='summary')return{ok:1,sum:codeSum()};
+ if(!cc)return{e:'البطاقة غير موجودة'};const box=cbox(cc.id);
+ if(op=='add'){const raw=Array.isArray(b.codes)?b.codes:String(b.text||'').split(/[\r\n,;\t]+/);if(raw.length>50000)return{e:'الحد الأقصى 50,000 كود في المرة الواحدة'};
+  const S=ckSet();let add=0,dup=0,bad=0;for(let x of raw){x=String(x||'').trim().replace(/\s+/g,' ');if(!x)continue;if(x.length<3||x.length>80||/[<>"'\\`]/.test(x)){bad++;continue}const k=ckey(x);if(S.has(k)){dup++;continue}S.add(k);box.a.push(x);add++}
+  if(add){audit(h,'codes-add',cc.id,add);CV++}return{ok:1,add,dup,bad,avail:box.a.length}}
+ if(op=='gen'){const n=Math.min(5000,Math.max(1,Math.round(+b.n)||0)),g=Math.min(6,Math.max(1,Math.round(+b.g)||3)),l=Math.min(8,Math.max(3,Math.round(+b.l)||4)),S=ckSet(),out=[];let t=0;
+  while(out.length<n&&t++<n*20){const x=genCode(g,l),k=ckey(x);if(S.has(k))continue;S.add(k);out.push(x)}box.a.push(...out);audit(h,'codes-gen',cc.id,out.length);CV++;return{ok:1,add:out.length,avail:box.a.length,codes:out.slice(0,5000)}}
+ if(op=='list'){const w=b.which=='s'?'s':'a',all=!!b.all,lim=all?50000:Math.min(500,Math.max(1,+b.limit||200));const arr=box[w];return{ok:1,total:arr.length,items:w=='s'?arr.slice(-lim).reverse():arr.slice(0,lim)}}
+ if(op=='del'){const k=ckey(b.code),i=box.a.findIndex(x=>ckey(x)==k);if(i<0)return{e:'الكود غير موجود في المتوفر'};box.a.splice(i,1);CKS=null;audit(h,'codes-del',cc.id,1);CV++;return{ok:1,avail:box.a.length}}
+ if(op=='clear'){const n=box.a.length;box.a=[];CKS=null;audit(h,'codes-clear',cc.id,n);CV++;return{ok:1,removed:n}}
+ return{e:'عملية غير معروفة'}}
+function redeem(role,id,code,h){const kind=role=='customer'?'wallet':'cap',key=ckey(code);if(key.length<4)return{e:'أدخل الكود كاملًا'};
+ for(const cid in db.codes||{}){const cd=db.cards[cid];if(!cd||cd.kind!=kind)continue;const box=db.codes[cid],i=box.a.findIndex(x=>ckey(x)==key);if(i<0)continue;
+  const amt=Math.round(+cd.v)||0;if(!(amt>0))return{e:'الكود غير صالح'};const c=box.a.splice(i,1)[0];box.s.push({c,[role=='customer'?'cid':'did']:id,at:Date.now(),red:1,amt});CV++;
+  if(role=='customer'){if(!ccredit(id,amt,'شحن بكود: '+cd.n))return{e:'تعذر الشحن'}}else{if(!db.drivers[id])return{e:'تعذر الشحن'};credit(id,amt,'شحن بكود: '+cd.n)}
+  audit(h,'redeem',id,amt);return{ok:1,amt,bal:role=='customer'?db.customers[id].bal:db.drivers[id].bal}}
+ return{e:'الكود غير صالح أو مستخدم'}}
 function set(h,b){const{k,id}=b;let v=b.v;const r=h['x-role'],i=h['x-id'];
  if(!W[r]||!W[r].includes(k)||!id)return 0;
  const old=db[k]&&db[k][id],mn=db.cfg.minBal;
@@ -169,6 +207,32 @@ function set(h,b){const{k,id}=b;let v=b.v;const r=h['x-role'],i=h['x-id'];
  if(k=='wallet'){const d=db.drivers[id],a=Math.round(+(v&&v.amt));if(!d||!a)return 0;credit(id,a,String((v&&v.why)||'شحن من لوحة التحكم').slice(0,100));audit(h,'wallet',id,a);return 1}
  if(k=='cwallet'){const a=Math.round(+(v&&v.amt));if(r!='admin'||!db.customers[id]||!a)return 0;audit(h,'cwallet',id,a);return ccredit(id,a,String(v.why||'شحن من لوحة التحكم').slice(0,100))}
  if(k=='incw'){if(r!='admin'||old||!v)return 0;const n=(db.cfg.inc||[]).find(x=>x.id==v.iid),d=db.drivers[v.did];if(!n||!d||id!=n.id+'_'+d.id||tripsOf(d.id,n)<n.trips)return 0;credit(d.id,+n.amt,'حافز: '+String(n.n).slice(0,60));db.incw[id]={id,iid:n.id,did:d.id,n:n.n,amt:+n.amt,trips:n.trips,at:Date.now()};return 1}
+ if(r=='admin'&&k=='cards'){if(!/^[A-Za-z0-9_-]{1,40}$/.test(String(id)))return 0;
+  if(v==null){if(stockOf(id)>0)return 0;if(db.codes&&db.codes[id])delete db.codes[id];CKS=null;CV++}
+  else{if(typeof v!='object')return 0;const n={};
+   if('n' in v){n.n=String(v.n||'').trim().slice(0,80);if(!n.n)return 0}else if(!old)return 0;
+   if('p' in v){const p=Math.round(+v.p);if(!(p>=0)||p>1e9)return 0;n.p=p}else if(!old)return 0;
+   if('cost' in v){if(v.cost===''||v.cost==null)n.cost='';else{const c=Math.round(+v.cost);if(!(c>=0)||c>1e9)return 0;n.cost=c}}
+   ['d'].forEach(f=>{if(f in v)n[f]=String(v[f]||'').slice(0,300)});if('cat' in v)n.cat=String(v.cat||'').trim().slice(0,60);if('e' in v)n.e=String(v.e||'').slice(0,8)||'💳';
+   if('kind' in v)n.kind=['card','wallet','cap'].includes(v.kind)?v.kind:'card';
+   if('auto' in v)n.auto=v.auto?1:0;
+   if('v' in v){const a=Math.round(+v.v);if(!(a>=0)||a>1e9)return 0;n.v=a}
+   const kd=n.kind||(old&&old.kind)||'card';if(kd!='card'){n.auto=1;if(!((+(n.v!=null?n.v:old&&old.v))>0))return 0}
+   if('img' in v&&okImg(v.img))n.img=v.img;v=n;CV++}}
+ if(k=='exp'){if(r!='admin')return 0;db.exp=db.exp||{};
+  if(!/^[A-Za-z0-9_-]{1,40}$/.test(String(id)))return 0;
+  if(v==null){if(!old)return 0;audit(h,'exp-del',id,old.amt);delete db.exp[id];return 1}
+  if(typeof v!='object')return 0;
+  const t=v.t=='in'?'in':v.t=='out'?'out':(old&&old.t);if(!t)return 0;
+  const a=Math.round(+(('amt' in v)?v.amt:old&&old.amt)*100)/100;if(!(a>0)||a>1e11)return 0;
+  const cat=String(('cat' in v)?v.cat:(old&&old.cat)||'').trim().slice(0,40);if(!cat)return 0;
+  let at=+(('at' in v)?v.at:(old&&old.at)||Date.now());if(!(at>=1577836800000)||at>Date.now()+864e5*366)at=Date.now();
+  if(!old&&Object.keys(db.exp).length>=50000)return 0;
+  const o={id,t,cat,amt:a,n:String(('n' in v)?v.n:(old&&old.n)||'').trim().slice(0,300),at,by:(old&&old.by)||'admin',cr:(old&&old.cr)||Date.now()};
+  if(old&&old.src)o.src=old.src;
+  const rc=('rec' in v)?(v.rec?1:0):(old&&old.rec?1:0);
+  if(rc&&!o.src){o.rec=1;o.nx=(old&&old.nx&&!('at' in v))?old.nx:nextMonth(at)}
+  db.exp[id]=o;if(o.rec)runRecurring();audit(h,old?'exp-edit':'exp-add',id,a);return 1}
  if(k=='ctop'){if(r=='customer'){if(old||!v||v.cid!=i||!db.customers[i])return 0;const a=Math.round(+v.amt);if(!(a>=1000)||a>5e6)return 0;const im=String(v.img||'').slice(0,200),rf=String(v.ref||'').trim().slice(0,100);if((im&&Object.values(db.ctop).some(x=>x.st>=0&&x.img==im))||(rf&&Object.values(db.ctop).some(x=>x.st>=0&&x.ref==rf)))return 0;if(Object.values(db.ctop).filter(x=>x.cid==i&&x.st==0).length>=5)return 0;db.ctop[id]={id,cid:i,amt:a,m:v.m=='zain'?'zain':'master',img:im,ref:rf,st:0,at:Date.now()};return 1}
   if(!old||!v||old.st!=0)return 0;if(v.st==1){ccredit(old.cid,old.amt,'شحن المحفظة ('+(old.m=='zain'?'زين كاش':'ماستر كارد')+')');audit(h,'ctop-ok',id,old.amt);db.ctop[id]={...old,st:1,by:r,ok:Date.now()};return 1}if(v.st==-1){db.ctop[id]={...old,st:-1,why:String(v.why||'').slice(0,200)};return 1}return 0}
  if(k=='wd'){
@@ -189,7 +253,8 @@ function set(h,b){const{k,id}=b;let v=b.v;const r=h['x-role'],i=h['x-id'];
    if(k=='orders'){const R=db.rests[v.rid],sb=(v.its||[]).reduce((s,x)=>{const it=((R&&R.items)||[]).find(y=>y.n==x.n);return s+(it?it.p:+x.p||0)*Math.max(1,x.q|0)},0),mp=Math.max(0,...Object.values(db.offers||{}).filter(o=>o.on!==0&&(!o.rid||o.rid==v.rid)).map(o=>+o.pct||0)),fl=Math.round(sb*(100-mp)/100)+db.cfg.min;if(!(v.tot>=fl))v.tot=fl}
    if(k=='rides'&&!(v.fare>=db.cfg.min))v.fare=db.cfg.min;
    const amt=k=='orders'?v.tot:k=='rides'?v.fare:v.p;
-   if(v.pay=='wallet'){const c=db.customers[i];if(!c||(c.bal||0)<amt)return 0;ccredit(i,-amt,(k=='orders'?'طلب طعام ':k=='rides'?'رحلة تكسي ':'شراء بطاقة ')+id);v.paid=1}
+   if(k=='cardorders'){const cc=db.cards[v.card];if(!cc||cc.kind=='wallet'||cc.kind=='cap'||(cc.auto&&!stockOf(cc.id)))return 0}
+   if(v.pay=='wallet'){const c=db.customers[i];if(!c||(c.bal||0)<amt)return 0;ccredit(i,-amt,(k=='orders'?'طلب طعام ':k=='rides'?'رحلة تكسي ':'شراء بطاقة ')+id);v.paid=1;if(k=='cardorders'){const cc=db.cards[v.card];if(cc&&cc.auto)deliver(v,id,i,cc)}}
    else v.pay=k=='cardorders'?(v.pay=='zain'?'zain':'master'):'cash'}
   else{const n={cid:i};if(v.st==-1&&(k=='rides'?old.st>=0&&old.st<3:old.st==0))n.st=-1;if(+v.rated>0&&old.st==4&&!old.rated)n.rated=Math.min(5,Math.max(1,+v.rated|0));if('rnote' in v&&old.st==4)n.rnote=String(v.rnote||'').slice(0,300);if('tip' in v&&!old.paid)n.tip=+v.tip>0?+v.tip:0;if('fare' in v&&!old.paid&&+v.fare>=old.fare)n.fare=+v.fare;v=n}}
  if(r=='admin'&&k=='drivers'&&v&&v.tfaReset){const d=db.drivers[id];if(!d)return 0;delete d.tfa;delete d.tfaP;delete d.tl;AU.rev['d:'+id]=Date.now();saveA();audit(h,'2fa-reset',id);return 1}
@@ -204,6 +269,9 @@ function set(h,b){const{k,id}=b;let v=b.v;const r=h['x-role'],i=h['x-id'];
  if(k=='cfg'){v={...(v||{})};['appPct','restPct','taxiPct'].forEach(f=>{if(f in v)v[f]=Math.min(100,Math.max(0,+v[f]||0))});delete v.mig5;if('req2fa' in v)v.req2fa=v.req2fa?1:0;if('theme' in v)v.theme=['auto','royal','night','ocean','ember','carbon','emerald','sunset','rose'].includes(v.theme)?v.theme:'auto';if('rejFee' in v)v.rejFee=Math.min(1e6,Math.max(0,Math.round(+v.rejFee)||0));if('auto' in v)v.auto=v.auto?1:0;if('maxKm' in v)v.maxKm=Math.min(200,Math.max(1,+v.maxKm||10));if('maxDev' in v)v.maxDev=Math.min(20,Math.max(1,Math.round(+v.maxDev)||3));['vpnBlock','timeGuard'].forEach(f=>{if(f in v)v[f]=v[f]?1:0});if('timeTol' in v)v.timeTol=Math.min(60,Math.max(1,Math.round(+v.timeTol)||3));db.cfg={...db.cfg,...v};audit(h,'cfg',id);return 1}
   if(k=='vars'){if(r!='admin'||!/^[A-Za-z][A-Za-z0-9_]{0,39}$/.test(String(id)))return 0;if(v!=null){const t=['s','n','b'].includes(v.t)?v.t:((old&&old.t)||'s');let x=v.v!==undefined?v.v:(old&&old.v);x=t=='n'?(Number.isFinite(+x)?+x:0):t=='b'?(x&&x!=='0'&&x!=='false'?1:0):String(x==null?'':x).slice(0,500);if(!old&&Object.keys(db.vars).length>=200)return 0;v={v:x,t,pub:('pub' in v?(v.pub?1:0):(old?old.pub:0)),d:String('d' in v?v.d:(old&&old.d)||'').slice(0,120),at:Date.now()}}audit(h,'var',id)}
  if(k=='drivers'&&v&&v.loc)v.locAt=Date.now();
+ if(k=='cardorders'&&old&&old.st==0&&v&&v.st>0&&r!='customer'){const cc=db.cards[old.card];
+  if(cc&&cc.auto&&!old.code&&!String(v.code||'').trim()){if(!stockOf(cc.id))return 0;const o2={};deliver(o2,id,old.cid,cc);v={...v,...o2,by:r}}
+  else{v={...v,dat:Date.now(),by:r};if(cc&&cc.cost!=null&&cc.cost!=='')v.cost=+cc.cost}}
  if(v==null)delete db[k][id];else db[k][id]={...old,...v,id};
  {const nw=db[k]&&db[k][id];if(nw&&nw.paid&&!nw.refd&&nw.st<0&&['orders','rides','cardorders'].includes(k)){nw.refd=1;ccredit(nw.cid,k=='orders'?nw.tot:k=='rides'?nw.fare:nw.p,'استرجاع '+id)}}
  if((k=='orders'||k=='rides')&&v&&db[k][id].st==4&&!db[k][id].chg&&db[k][id].did)charge(k,db[k][id]);
@@ -320,6 +388,9 @@ const SRV=http.createServer((q,s)=>{
   if(b.a=='disable'){if(!d.tfa||!totp(d.tfa,b.code,d)){lk(key,1);return j(400,{e:'الرمز غير صحيح'})}delete d.tfa;delete d.tfaP;AU.rev['d:'+id]=Date.now();saveA();audit(h,'2fa-off',id);save();bump();return j(200,{ok:1})}
   j(400,{e:'طلب غير صالح'})}catch(e){j(400,{e:'طلب غير صالح'})}});return}
  if(u=='/api/stream'){if(SSE.size>=Math.max(0,+VAR('maxSSE',20000)||0)){s.writeHead(204);return s.end()}s.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive','X-Accel-Buffering':'no'});s.write('retry:1500\n\ndata:'+VER+'\n\n');SSE.add(s);q.on('close',()=>SSE.delete(s));return}
+ if(u=='/api/codes'&&q.method=='POST'){let b='';q.on('data',c=>{b+=c;if(b.length>4e6)q.destroy()});q.on('end',()=>{try{const h=q.headers;if(h['x-role']!='admin'||!ok(h))return j(403,{});const bb=JSON.parse(b),r=codesOp(h,bb);if(r.ok&&bb.op!='list'&&bb.op!='summary'){save();bump()}return j(r.e?400:200,r)}catch(e){j(400,{e:'طلب غير صالح'})}});return}
+ if(u=='/api/redeem'&&q.method=='POST'){let b='';q.on('data',c=>{b+=c;if(b.length>2e3)q.destroy()});q.on('end',()=>{try{const h=q.headers,r=h['x-role'];if(!ok(h)||!h['x-id']||(r!='customer'&&r!='driver'))return j(401,{e:'انتهت الجلسة'});const key='R|'+h['x-ip']+'|'+h['x-id'];if(lk(key))return j(429,{e:'محاولات كثيرة، حاول بعد 10 دقائق'});
+  const x=redeem(r,h['x-id'],JSON.parse(b).code,h);if(!x.ok){lk(key,1);return j(400,{e:x.e})}save();bump();return j(200,x)}catch(e){j(400,{e:'طلب غير صالح'})}});return}
  if(u=='/api/menu'&&q.method=='POST'){let b='';q.on('data',c=>{b+=c;if(b.length>3e6)q.destroy()});q.on('end',()=>{try{if(ok(q.headers)){const r=menuOp(q.headers,JSON.parse(b));if(r){save();bump();return j(200,r)}}}catch(e){}j(403,{})});return}
  if(u=='/api/menu-ai'&&q.method=='POST'){let b='',big=0;q.on('data',c=>{if(big)return;b+=c;if(b.length>18e6){big=1;b='';q.resume();j(413,{e:'الملفات كبيرة جدًا، قلّل عدد الصور أو حجمها'})}});q.on('end',async()=>{if(big)return;try{const h=q.headers;if(!ok(h))return j(401,{e:'انتهت الجلسة'});const r=h['x-role'];if(r!='rest'&&r!='admin')return j(403,{});b=JSON.parse(b);const rid=r=='rest'?h['x-id']:String(b.rid||'');if(!db.rests[rid])return j(403,{});
   const out=await menuAI(rid,b);j(200,out)}catch(e){j(e&&typeof e.code=='number'?e.code:500,{e:e&&typeof e.code=='number'?e.message:'تعذر تحليل المنيو'})}});return}
