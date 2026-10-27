@@ -1,18 +1,36 @@
-const http=require('http'),fs=require('fs'),path=require('path');
+const http=require('http'),fs=require('fs'),path=require('path'),ZL=require('zlib');
+// ---- تحميل آمن + حفظ ذرّي مؤجَّل (لا يمسح بياناتك عند تلف الملف) ----
+function loadJSON(f){for(const p of [f,f+'.bak']){if(!fs.existsSync(p))continue;try{const t=fs.readFileSync(p,'utf8');if(!t.trim())continue;if(p!==f)console.error('[DB] استُخدمت النسخة الاحتياطية',p);return JSON.parse(t)}catch(e){console.error('[DB] تعذر قراءة',p,e.message)}}
+ if(fs.existsSync(f)&&fs.statSync(f).size>2){console.error('[FATAL] ملف البيانات '+f+' موجود لكنه تالف ولا توجد نسخة سليمة. أوقفت التشغيل كي لا أمسح بياناتك.');process.exit(1)}return null}
+const yl=()=>new Promise(r=>setImmediate(r));
+async function serMap(m,st){const out=[];let t=Date.now();for(const k in m){const sv=JSON.stringify(m[k]);if(sv!==undefined)out.push(JSON.stringify(k)+':'+sv);if(Date.now()-t>6){st.ms+=Date.now()-t;await yl();t=Date.now()}}st.ms+=Date.now()-t;return'{'+out.join(',')+'}'}
+async function serAsync(o,st){const parts=[];for(const k of Object.keys(o)){const v=o[k];const sv=v&&typeof v=='object'&&!Array.isArray(v)&&Object.keys(v).length>300?await serMap(v,st):JSON.stringify(v);if(sv!==undefined)parts.push(JSON.stringify(k)+':'+sv)}return'{'+parts.join(',')+'}'}
+function mkSaver(file,get,minMs){let dirty=0,tm=null,wip=0,ms=0,bakAt=0;
+ const bak=()=>{if(Date.now()-bakAt>6e5&&fs.existsSync(file)){bakAt=Date.now();try{fs.copyFileSync(file,file+'.bak')}catch(e){}}};
+ function flush(sync){if(tm){clearTimeout(tm);tm=null}if(!dirty)return;if(wip&&!sync){tm=setTimeout(flush,200);return}
+  const tmp=file+'.tmp';
+  if(sync){let s;try{s=JSON.stringify(get())}catch(e){console.error('[SAVE] stringify',e.message);return}dirty=0;try{fs.writeFileSync(tmp,s);bak();fs.renameSync(tmp,file)}catch(e){console.error('[SAVE]',e.message);dirty=1}return}
+  wip=1;dirty=0;const st={ms:0};serAsync(get(),st).then(s=>{ms=st.ms;fs.writeFile(tmp,s,e=>{if(e){wip=0;dirty=1;console.error('[SAVE]',e.message);if(!tm)tm=setTimeout(flush,2e3);return}bak();fs.rename(tmp,file,e2=>{wip=0;if(e2){dirty=1;console.error('[SAVE]',e2.message)}})})}).catch(e=>{wip=0;dirty=1;console.error('[SAVE] serialize',e&&e.message)})}
+ return{mark:()=>{dirty=1;if(!tm)tm=setTimeout(flush,Math.max(minMs,ms*4))},flush,ms:()=>ms}}
+let MUT=0;
 const F=process.env.DATA_FILE||'data.json',ADMIN=process.env.ADMIN_PIN||'1234',KEY=process.env.GOOGLE_MAPS_KEY||'',PUB=path.join(__dirname,'public');
 let db={topups:{},tx:{},customers:{},rests:{},orders:{},rides:{},drivers:{},tickets:{},staff:{},offers:{},cards:{},apps:{},cardorders:{},wd:{},incw:{},ctop:{},ctx:{},cfg:{base:1500,km:700,min:3000,foodKm:400,auto:1,maxKm:10}};
-try{Object.assign(db,JSON.parse(fs.readFileSync(F)))}catch(e){}
-db.cfg={maxDev:3,vpnBlock:1,timeGuard:1,timeTol:3,appPct:15,restPct:5,taxiPct:5,minBal:-15000,pay:[],minWd:15000,rt:[{id:'eco',n:'توفير',d:'التكسي الأوفر',m:1,g:'taxi'},{id:'super',n:'سوبر',d:'الخيار الأفضل',m:1.18,g:'taxi'},{id:'plus',n:'بلس',d:'راحة أكثر',m:1.3,g:'taxi'},{id:'box',n:'بوكس',d:'توصيل طرود وأغراض',m:1.1,g:'box'}],...db.cfg};if(!db.cfg.mig5){db.cfg.mig5=1;db.cfg.restPct=5;db.cfg.taxiPct=5}db.wd=db.wd||{};db.incw=db.incw||{};db.ctop=db.ctop||{};db.ctx=db.ctx||{};
-const pubc=c=>({base:c.base,km:c.km,min:c.min,foodKm:c.foodKm,rt:c.rt,pay:c.pay,restPct:c.restPct,theme:c.theme});
-const save=()=>fs.writeFile(F,JSON.stringify(db),()=>{});
+{const L0=loadJSON(F);if(L0)Object.assign(db,L0)}
+db.cfg={maxDev:3,vpnBlock:1,timeGuard:1,timeTol:3,appPct:15,restPct:5,taxiPct:5,minBal:-15000,pay:[],minWd:15000,rt:[{id:'eco',n:'توفير',d:'التكسي الأوفر',m:1,g:'taxi'},{id:'super',n:'سوبر',d:'الخيار الأفضل',m:1.18,g:'taxi'},{id:'plus',n:'بلس',d:'راحة أكثر',m:1.3,g:'taxi'},{id:'box',n:'بوكس',d:'توصيل طرود وأغراض',m:1.1,g:'box'}],...db.cfg};if(!db.cfg.mig5){db.cfg.mig5=1;db.cfg.restPct=5;db.cfg.taxiPct=5}db.wd=db.wd||{};db.incw=db.incw||{};db.ctop=db.ctop||{};db.ctx=db.ctx||{};db.vars=db.vars||{};
+for(const[k,x]of Object.entries({maintenance:{v:0,t:'b',pub:1,d:'وضع الصيانة: يوقف الطلبات الجديدة من الزبائن ويعرض لهم رسالة'},maintMsg:{v:'التطبيق في صيانة قصيرة، نعود قريبًا.',t:'s',pub:1,d:'رسالة الصيانة'},banner:{v:'',t:'s',pub:1,d:'شريط إعلان أعلى كل التطبيقات (فارغ = مخفي)'},rlPerMin:{v:240,t:'n',pub:0,d:'حد طلبات المستخدم الواحد في الدقيقة'},bumpMs:{v:350,t:'n',pub:0,d:'تأخير بث التحديثات الفورية (مللي ثانية) — ارفعه عند الضغط العالي'},maxSSE:{v:20000,t:'n',pub:0,d:'أقصى اتصالات بث مباشر؛ الزائد يعمل بالاستطلاع'},archiveDays:{v:0,t:'n',pub:0,d:'أرشفة الطلبات/الرحلات المنتهية الأقدم من N يوم إلى مجلد archive (0 = إيقاف). يبقي السيرفر سريعًا مع نمو السجل؛ الرصيد والمحاسبة لا تتأثر لكن الأقدم يختفي من اللوحة'}}))if(!db.vars[k])db.vars[k]={id:k,...x,at:Date.now()};
+const VAR=(k,d)=>{const x=db.vars[k];return x==null||x.v==null||x.v===''?d:x.v};
+let PVM=-1,PVC={};function PV(){if(PVM!==MUT){PVM=MUT;PVC={};for(const k in db.vars){const x=db.vars[k];if(x&&x.pub)PVC[k]=x.v}}return PVC}
+const pubc=c=>({base:c.base,km:c.km,min:c.min,foodKm:c.foodKm,rt:c.rt,pay:c.pay,restPct:c.restPct,theme:c.theme,vars:PV()});
+const DBS=mkSaver(F,()=>db,Math.max(200,+process.env.SAVE_INTERVAL_MS||1500)),save=()=>{MUT++;CV++;DBS.mark()},savel=()=>{MUT++;DBS.mark()};
 const AUF=process.env.AUTH_FILE||'auth.json',GCID=process.env.GOOGLE_CLIENT_ID||'',WAU=process.env.WA_API_URL||'',WAK=process.env.WA_API_KEY||'',cr=require('crypto'),OTP={},FAIL={},RG={};
-let AU={sessions:{}};try{AU=JSON.parse(fs.readFileSync(AUF))}catch(e){}AU.sessions=AU.sessions||{};AU.pw=AU.pw||{};AU.rev=AU.rev||{};
-if(!process.env.SESSION_SECRET&&!AU.sec){AU.sec=cr.randomBytes(32).toString('hex');fs.writeFile(AUF,JSON.stringify(AU),()=>{})}
+let AU=loadJSON(AUF)||{sessions:{}};AU.sessions=AU.sessions||{};AU.pw=AU.pw||{};AU.rev=AU.rev||{};
+if(!process.env.SESSION_SECRET&&!AU.sec){AU.sec=cr.randomBytes(32).toString('hex');fs.writeFileSync(AUF,JSON.stringify(AU))}
 const SEC=process.env.SESSION_SECRET||AU.sec,YEAR=365*864e5,b64=x=>Buffer.from(x).toString('base64url'),sg=x=>cr.createHmac('sha256',SEC).update(x).digest('base64url');
 const mk=id=>{const p=b64(id)+'.'+Date.now();return p+'.'+sg(p)};
 const sid=t=>{t=String(t||'');const o=AU.sessions[t];if(o)return o.id;const a=t.split('.');if(a.length!=3)return'';const p=a[0]+'.'+a[1],x=Buffer.from(sg(p)),y=Buffer.from(a[2]);if(x.length!=y.length||!cr.timingSafeEqual(x,y))return'';const at=+a[1],id=Buffer.from(a[0],'base64url').toString();if(!(at>0)||Date.now()-at>YEAR||at<(AU.rev[id]||0))return'';return id};
 process.on('uncaughtException',e=>console.error('uncaught',e));process.on('unhandledRejection',e=>console.error('unhandled',e));
-const saveA=()=>fs.writeFile(AUF,JSON.stringify(AU),()=>{});
+const AUS=mkSaver(AUF,()=>AU,1000),saveA=()=>AUS.mark();
+for(const sg of ['SIGTERM','SIGINT'])process.on(sg,()=>{try{DBS.flush(1);AUS.flush(1)}catch(e){}process.exit(0)});
 const nph=x=>{let p=String(x||'').replace(/\D/g,'');if(p.startsWith('00'))p=p.slice(2);if(p.startsWith('0'))p='964'+p.slice(1);return/^\d{10,15}$/.test(p)?p:''};
 async function sendWA(p,c){const m='رمز دخولك إلى تكسي المتميز: '+c;if(!WAU){console.log('[OTP]',p,c);return 1}try{const r=await fetch(WAU,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+WAK,apikey:WAK},body:JSON.stringify({to:p,number:p,phone:p,message:m,text:m})});return r.ok}catch(e){return 0}}
 
@@ -57,11 +75,11 @@ function devCheck(id,h){const c=db.customers[id];if(!c)return false;const d=cdev
  const x=c.devs[d];if(!x||x.st)return false;
  if(x.ip!=ip){x.ip=ip;x.lat=now}x.last=now;return true}
 const who=h=>{if(h['x-role']=='customer')h['x-id']=sid(h['x-token'])};
-const W={customer:['orders','rides','tickets','apps','cardorders','ctop'],driver:['orders','rides','drivers','topups','wd'],rest:['rests','orders'],support:['orders','rides','tickets','drivers','apps','cardorders','topups','wd','ctop'],admin:['cdev','rests','orders','rides','drivers','tickets','staff','cfg','offers','cards','apps','cardorders','topups','wd','wallet','incw','ctop','cwallet']};
+const W={customer:['orders','rides','tickets','apps','cardorders','ctop'],driver:['orders','rides','drivers','topups','wd'],rest:['rests','orders'],support:['orders','rides','tickets','drivers','apps','cardorders','topups','wd','ctop'],admin:['vars','cdev','rests','orders','rides','drivers','tickets','staff','cfg','offers','cards','apps','cardorders','topups','wd','wallet','incw','ctop','cwallet']};
 const LK={},RL={};
 const lk=(k,f)=>{const n=Date.now(),e=LK[k]||(LK[k]={n:0,t:n});if(n-e.t>6e5){e.n=0;e.t=n}if(f===1)e.n++;else if(f===0)e.n=0;return e.n>=10};
 const eq=(a,b)=>{if(a==null||b==null||a===''||b==='')return false;a=Buffer.from(String(a));b=Buffer.from(String(b));return a.length==b.length&&cr.timingSafeEqual(a,b)};
-const rl=h=>{const k=h['x-role']+'|'+(h['x-id']||h['x-ip']),n=Date.now(),e=RL[k]||(RL[k]={n:0,t:n});if(n-e.t>6e4){e.n=0;e.t=n}return ++e.n>240};
+const rl=h=>{const k=h['x-role']+'|'+(h['x-id']||h['x-ip']),n=Date.now(),e=RL[k]||(RL[k]={n:0,t:n});if(n-e.t>6e4){e.n=0;e.t=n}return ++e.n>Math.max(20,+VAR('rlPerMin',240)||240)};
 setInterval(()=>{const n=Date.now();for(const k in LK)if(n-LK[k].t>6e5)delete LK[k];for(const k in RL)if(n-RL[k].t>6e4)delete RL[k]},6e5).unref();
 const ok0=h=>{const r=h['x-role'],p=h['x-pin'],i=h['x-id'];
  return r=='customer'?!!i:r=='admin'?eq(p,ADMIN):r=='support'?Object.values(db.staff).some(s=>eq(s.pin,p)):r=='rest'?!!db.rests[i]&&eq(db.rests[i].pin,p):r=='driver'?!!db.drivers[i]&&eq(db.drivers[i].pin,p)&&(!db.drivers[i].tfa||sid(h['x-token'])=='d:'+i):false};
@@ -76,16 +94,57 @@ const totp=(k,code,d)=>{code=String(code||'').replace(/\s/g,'');if(!k||!/^\d{6}$
 const audit=(h,what,id,amt)=>{db.audit=db.audit||[];db.audit.push({at:Date.now(),role:h['x-role'],by:h['x-id']||'',ip:h['x-ip']||'',what,id,amt:amt||0});if(db.audit.length>3000)db.audit.splice(0,db.audit.length-3000)};
 const clean=(o,f)=>Object.fromEntries(Object.entries(o).map(([k,v])=>{v={...v};f.forEach(x=>delete v[x]);return[k,v]}));
 const flt=(c,fn)=>Object.fromEntries(Object.entries(db[c]).filter(([,v])=>fn(v)));
-function view(h){const r=h['x-role'],i=h['x-id'],rs=clean(db.rests,['pin']);
+// ---- فهارس تُحدَّث تدريجيًا: كل سجل يتغيّر يُعاد فهرسته وحده (O(1)) بدل إعادة بناء كل شيء ----
+const mp=()=>Object.create(null);
+const IXS={orders:{co:'cid',do:'did',ro:'rid'},rides:{cr:'cid',dr:'did'},tickets:{ct:'cid'},apps:{ca:'cid'},cardorders:{cc:'cid'},ctop:{cp:'cid'},ctx:{cx:'cid'},topups:{dt:'did'},tx:{dx:'did'},wd:{dw:'did'},incw:{di:'did'}};
+const IXM_=['co','do','ro','cr','dr','ct','ca','cc','cp','cx','dt','dx','dw','di'];
+let IX=null,IXF=1,CV=0;
+function ixNew(){const I={rv:mp(),pO:mp(),pR:mp(),pend:mp(),busy:mp()};for(const m of IXM_)I[m]=mp();return I}
+function ixAdd(I,c,id,o){const rv=[],sp=IXS[c];
+ for(const m in sp){const k=o[sp[m]];if(k==null||k==='')continue;(I[m][k]||(I[m][k]=mp()))[id]=o;rv.push(m,k)}
+ if(c=='orders'){if(!o.did){if(o.st==2){I.pO[id]=o;rv.push('pO',id)}if((o.st==2||(o.st==1&&o.pt))&&o.rloc){I.pend['o'+id]=[o,'orders',o.rloc,id];rv.push('pend','o'+id)}}else if(o.st>=0&&o.st<4){I.busy[o.did]=(I.busy[o.did]||0)+1;rv.push('busy',o.did)}}
+ else if(c=='rides'){if(!o.did){if(o.st==0){I.pR[id]=o;rv.push('pR',id);if(o.from){I.pend['r'+id]=[o,'rides',o.from,id];rv.push('pend','r'+id)}}}else if(o.st>=0&&o.st<4){I.busy[o.did]=(I.busy[o.did]||0)+1;rv.push('busy',o.did)}}
+ I.rv[c+'|'+id]=rv}
+function ixRem(I,c,id){const key=c+'|'+id,rv=I.rv[key];if(!rv)return;delete I.rv[key];
+ for(let i=0;i<rv.length;i+=2){const m=rv[i],k=rv[i+1];if(m=='pO'||m=='pR'||m=='pend')delete I[m][k];else if(m=='busy'){if(--I.busy[k]<=0)delete I.busy[k]}else{const b=I[m][k];if(b){delete b[id];let e=1;for(const _ in b){e=0;break}if(e)delete I[m][k]}}}}
+function ixBuild(){const I=ixNew();for(const c in IXS){const col=db[c];if(col)for(const id in col)ixAdd(I,c,id,col[id])}return I}
+const ix=()=>{if(!IX||IXF){IX=ixBuild();IXF=0}return IX};
+const touch=(c,id)=>{if(IX&&!IXF&&IXS[c]){ixRem(IX,c,id);const o=db[c]&&db[c][id];if(o)ixAdd(IX,c,id,o)}};
+setInterval(()=>{IXF=1},12e4).unref(); // شبكة أمان: إعادة بناء كاملة كل دقيقتين
+// وضع تحقق (IX_VERIFY=1): يقارن الفهرس التدريجي بفهرس جديد بعد كل عملية ويصلّح نفسه
+function ixCheck(tag){if(!IX||IXF)return;const J=ixBuild(),sg=I=>{const o=[];for(const m of IXM_)for(const k in I[m])o.push(m+':'+k+'='+Object.keys(I[m][k]).sort().join(','));for(const m of ['pO','pR','pend'])o.push(m+'='+Object.keys(I[m]).sort().join(','));o.push('busy='+Object.keys(I.busy).sort().map(k=>k+':'+I.busy[k]).join(','));return o.sort()},a=sg(IX),b=sg(J);
+ if(a.length!=b.length||a.some((x,i)=>x!==b[i])){const sa=new Set(a),sb=new Set(b);console.error('[IX MISMATCH]',tag,'extra:',a.filter(x=>!sb.has(x)).slice(0,3),'missing:',b.filter(x=>!sa.has(x)).slice(0,3));IXF=1}}
+const FR={v:-1},frag=(k,f)=>{if(FR.v!==CV){for(const x in FR)delete FR[x];FR.v=CV}return FR[k]!==undefined?FR[k]:(FR[k]=f())};
+const E0={};
+function custParts(i,I){const orders=I.co[i]||E0,rides=I.cr[i]||E0;
+ const ids=new Set(),live=new Set();for(const k in orders){const o=orders[k],d=o.did;if(d&&db.drivers[d]){ids.add(d);if(o.st>=0&&o.st<4)live.add(d)}}for(const k in rides){const o=rides[k],d=o.did;if(d&&db.drivers[d]){ids.add(d);if(o.st>=0&&o.st<4)live.add(d)}}
+ const drivers={};for(const d of ids){const x=db.drivers[d];drivers[d]={id:d,n:x.n,ph:x.ph,car:x.car,plate:x.plate,color:x.color,img:x.img,loc:live.has(d)?x.loc:undefined}}
+ return{orders,rides,tickets:I.ct[i]||E0,apps:I.ca[i]||E0,cardorders:I.cc[i]||E0,me:{bal:(db.customers[i]||{}).bal||0},ctop:I.cp[i]||E0,ctx:I.cx[i]||E0,drivers}}
+const rsOf=I=>frag('rs',()=>clean(db.rests,['pin']));
+function view(h){const r=h['x-role'],i=h['x-id'],I=ix();
  if(r=='admin')return db;
- if(r=='support')return{...db,customers:clean(db.customers,['devs','sess','att']),rests:rs,drivers:clean(db.drivers,['pin','tfa','tfaP','tl']),staff:{}};
- if(r=='rest'){const os=flt('orders',v=>v.rid==i),ids=[...new Set(Object.values(os).map(v=>v.did).filter(d=>d&&db.drivers[d]))];return{cfg:pubc(db.cfg),rests:{[i]:db.rests[i]},orders:os,drivers:Object.fromEntries(ids.map(d=>{const x=db.drivers[d];return[d,{id:d,n:x.n,ph:x.ph,car:x.car,loc:x.loc,locAt:x.locAt}]}))}}
- if(r=='driver')return{cfg:db.cfg,topups:flt('topups',v=>v.did==i),tx:flt('tx',v=>v.did==i),wd:flt('wd',v=>v.did==i),incw:flt('incw',v=>v.did==i),rests:rs,orders:clean(flt('orders',v=>v.did==i||(v.st==2&&!v.did)),['rnote']),rides:clean(flt('rides',v=>v.did==i||(v.st==0&&!v.did)),['rnote']),drivers:{[i]:{...clean(db.drivers,['pin','tfa','tfaP','tl'])[i],tfaOn:db.drivers[i]&&db.drivers[i].tfa?1:0}}};
- const mine=v=>v.cid==i,orders=flt('orders',mine),rides=flt('rides',mine);
- const ids=[...new Set([...Object.values(orders),...Object.values(rides)].map(v=>v.did).filter(d=>d&&db.drivers[d]))];
- return{cfg:pubc(db.cfg),rests:rs,orders,rides,tickets:flt('tickets',mine),offers:db.offers,cards:db.cards,apps:flt('apps',mine),cardorders:flt('cardorders',mine),me:{bal:(db.customers[i]||{}).bal||0},ctop:flt('ctop',mine),ctx:flt('ctx',mine),drivers:Object.fromEntries(ids.map(d=>{const x=db.drivers[d];return[d,{id:d,n:x.n,ph:x.ph,car:x.car,plate:x.plate,color:x.color,img:x.img,loc:x.loc}]}))}}
-function credit(d,a,why){const x=db.drivers[d];if(!x)return;x.bal=(x.bal||0)+a;if(x.bal<=db.cfg.minBal)x.on=0;const t='t'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);db.tx[t]={id:t,did:d,amt:a,why,bal:x.bal,at:Date.now()}}
-function ccredit(c,a,why){const x=db.customers[c];if(!x||!a)return 0;x.bal=(x.bal||0)+a;const t='x'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);db.ctx[t]={id:t,cid:c,amt:a,why,bal:x.bal,at:Date.now()};return 1}
+ if(r=='support')return{...db,customers:clean(db.customers,['devs','sess','att']),rests:rsOf(I),drivers:clean(db.drivers,['pin','tfa','tfaP','tl']),staff:{},vars:PV()};
+ if(r=='rest'){const os=I.ro[i]||E0,ids=[...new Set(Object.values(os).map(v=>v.did).filter(d=>d&&db.drivers[d]))];return{cfg:pubc(db.cfg),rests:{[i]:db.rests[i]},orders:os,drivers:Object.fromEntries(ids.map(d=>{const x=db.drivers[d];return[d,{id:d,n:x.n,ph:x.ph,car:x.car,loc:x.loc,locAt:x.locAt}]}))}}
+ if(r=='driver'){const me=db.drivers[i],dm=me?(()=>{const x={...me};['pin','tfa','tfaP','tl'].forEach(f=>delete x[f]);x.tfaOn=me.tfa?1:0;return x})():undefined;
+  return{cfg:{...db.cfg,vars:PV()},topups:I.dt[i]||E0,tx:I.dx[i]||E0,wd:I.dw[i]||E0,incw:I.di[i]||E0,rests:rsOf(I),orders:clean({...(I.do[i]||E0),...I.pO},['rnote']),rides:clean({...(I.dr[i]||E0),...I.pR},['rnote']),drivers:{[i]:dm}}}
+ return{cfg:pubc(db.cfg),rests:rsOf(I),...custParts(i,I),offers:db.offers,cards:db.cards}}
+// نسخة JSON جاهزة: الأجزاء المشتركة (إعدادات/مطاعم/عروض) تُحوَّل لنص مرة واحدة لكل تغيير
+function viewJSON(h){const R=h['x-role'];
+ if(R=='driver'){const I=ix(),i=h['x-id'],me=db.drivers[i],J=JSON.stringify;if(!me)return J(view(h));const dm={...me};['pin','tfa','tfaP','tl'].forEach(f=>delete dm[f]);dm.tfaOn=me.tfa?1:0;
+  return'{"cfg":'+frag('dc',()=>J({...db.cfg,vars:PV()}))+',"topups":'+J(I.dt[i]||E0)+',"tx":'+J(I.dx[i]||E0)+',"wd":'+J(I.dw[i]||E0)+',"incw":'+J(I.di[i]||E0)+',"rests":'+frag('fr',()=>J(rsOf(I)))+',"orders":'+J(clean({...(I.do[i]||E0),...I.pO},['rnote']))+',"rides":'+J(clean({...(I.dr[i]||E0),...I.pR},['rnote']))+',"drivers":{'+J(i)+':'+J(dm)+'}}'}
+ if(R!='customer')return JSON.stringify(view(h));
+ const I=ix(),p=custParts(h['x-id'],I),J=JSON.stringify;
+ return'{"cfg":'+frag('fc',()=>J(pubc(db.cfg)))+',"rests":'+frag('fr',()=>J(rsOf(I)))+',"orders":'+J(p.orders)+',"rides":'+J(p.rides)+',"tickets":'+J(p.tickets)+',"offers":'+frag('fo',()=>J(db.offers))+',"cards":'+frag('fk',()=>J(db.cards))+',"apps":'+J(p.apps)+',"cardorders":'+J(p.cardorders)+',"me":'+J(p.me)+',"ctop":'+J(p.ctop)+',"ctx":'+J(p.ctx)+',"drivers":'+J(p.drivers)+'}'}
+const VC=new Map();setInterval(()=>{for(const[k,e]of VC)if(e.m!==MUT)VC.delete(k)},3e4).unref();
+const inm=(q,t)=>String(q.headers['if-none-match']||'').split(',').some(x=>x.trim().replace(/^W\//,'')===t);
+function sendView(q,s){const h=q.headers,key=h['x-role']+'|'+(h['x-id']||''),now=Date.now();let e=VC.get(key);
+ if(!e||e.m!==MUT||now-e.t>3e3){const body=viewJSON(h);e={m:MUT,t:now,body,etag:'"'+cr.createHash('md5').update(body).digest('hex').slice(0,20)+'"',gz:null};VC.set(key,e);if(VC.size>2e4)VC.clear()}
+ const H={'Content-Type':'application/json','ETag':e.etag,'Cache-Control':'no-cache','Vary':'X-Role, X-Id, Accept-Encoding','X-Content-Type-Options':'nosniff'};
+ if(inm(q,e.etag)){s.writeHead(304,H);return s.end()}
+ if(e.body.length>1024&&/\bgzip\b/.test(h['accept-encoding']||'')){(e.gz||(e.gz=new Promise(r=>ZL.gzip(e.body,{level:4},(er,b)=>r(er?null:b))))).then(b=>{if(!b){s.writeHead(200,H);return s.end(e.body)}H['Content-Encoding']='gzip';H['Content-Length']=b.length;s.writeHead(200,H);s.end(b)});return}
+ H['Content-Length']=Buffer.byteLength(e.body);s.writeHead(200,H);s.end(e.body)}
+function credit(d,a,why){const x=db.drivers[d];if(!x)return;x.bal=(x.bal||0)+a;if(x.bal<=db.cfg.minBal)x.on=0;const t='t'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);db.tx[t]={id:t,did:d,amt:a,why,bal:x.bal,at:Date.now()};touch('tx',t)}
+function ccredit(c,a,why){const x=db.customers[c];if(!x||!a)return 0;x.bal=(x.bal||0)+a;const t='x'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);db.ctx[t]={id:t,cid:c,amt:a,why,bal:x.bal,at:Date.now()};touch('ctx',t);return 1}
 const tripsOf=(d,n)=>{const f=+n.from||0,t=+n.to||9e15,k=n.kind||'all',g=o=>o.did==d&&o.st==4&&o.at>=f&&o.at<=t;return(k!='food'?Object.values(db.rides).filter(g).length:0)+(k!='taxi'?Object.values(db.orders).filter(g).length:0)};
 function charge(k,o){const c=db.cfg;o.chg=1;if(o.paid&&o.did&&!o.dpd){o.dpd=1;credit(o.did,k=='orders'?(o.tot||0):(o.fare||0),'دفع بالمحفظة '+o.id)}if(k=='orders'){o.com=Math.round((o.fee||0)*c.appPct/100);const r=db.rests[o.rid],sb=(o.its||[]).reduce((s,i)=>s+i.q*i.p,0);const rp=+((r&&r.pct!=null&&r.pct!=='')?r.pct:c.restPct)||0;o.rpct=rp;o.rcom=Math.round(sb*rp/100)}else o.com=Math.round((o.fare||0)*c.taxiPct/100);if(o.com)credit(o.did,-o.com,(k=='orders'?'عمولة طلب ':'عمولة رحلة ')+o.id)}
 const okImg=s=>typeof s=='string'&&(s===''||/^\/u\/[a-f0-9]{32}\.\w+$/.test(s)||(/^data:image\/(jpeg|png|webp);base64,/.test(s)&&s.length<4e5));
@@ -93,7 +152,7 @@ const cleanItems=a=>{if(!Array.isArray(a)||a.length>1000)return null;const ids=n
 const num=x=>Number.isFinite(+x)?+x:0,S=(x,n)=>String(x==null?'':x).slice(0,n),pt=p=>{p=p||{};const a=+p.lat,g=+p.lng;return p.lat!=null&&Number.isFinite(a)&&Number.isFinite(g)&&Math.abs(a)<=90&&Math.abs(g)<=180?{lat:a,lng:g}:null};
 function cust(k,v,nw){const c=db.cfg,o={cid:v.cid};if(nw){o.st=0;o.at=Date.now()}
  if(k=='orders'){const R=db.rests[v.rid],loc=pt(v.loc);if(!R||!loc||!Array.isArray(v.its)||!v.its.length||v.its.length>60)return null;const its=[];for(const x of v.its){const it=(R.items||[]).find(y=>y.n==(x&&x.n));if(!it)return null;its.push({n:it.n,q:Math.min(99,Math.max(1,(+x.q)|0)),p:it.p})}
-  const sb=its.reduce((a,x)=>a+x.q*x.p,0),mp=Math.max(0,...Object.values(db.offers||{}).filter(x=>x.on!==0&&(!x.rid||x.rid==v.rid)).map(x=>+x.pct||0)),fee=R.fd?0:Math.max(c.min,Math.round((c.base+(pt(R.loc)?hv(R.loc,loc)*1.3*c.foodKm:0))/250)*250),dsc=Math.round(sb*mp/100);
+  const sb=its.reduce((a,x)=>a+x.q*x.p,0),mp=Math.max(0,...Object.values(db.offers||{}).filter(x=>x.on!==0&&(!x.rid||x.rid==v.rid)).map(x=>+x.pct||0)),fee=Math.max(c.min,Math.round((c.base+(pt(R.loc)?hv(R.loc,loc)*1.3*c.foodKm:0))/250)*250),dsc=Math.round(sb*mp/100);
   Object.assign(o,{rid:S(v.rid,40),rn:S(R.n,80),rloc:pt(R.loc),its,fee,disc:dsc,tot:sb-dsc+fee,cn:S(v.cn,60),cp:S(v.cp,30),loc,note:S(v.note,300),pay:S(v.pay,10)});return o}
  if(k=='rides'){const f=pt(v.from),t=pt(v.to),rt=(c.rt||[]).find(x=>x.id==v.rt);if(!f||!t||!rt)return null;const fl=Math.max(c.min,Math.round((c.base+hv(f,t)*.95*c.km)*(rt.m||1)/250)*250);
   Object.assign(o,{cn:S(v.cn,60),cp:S(v.cp,30),from:f,to:t,fa:S(v.fa,120),ta:S(v.ta,120),km:Math.min(500,Math.max(0,num(v.km))),min:Math.min(1440,Math.max(0,num(v.min))),fare:Math.min(5e6,Math.max(fl,Math.round(num(v.fare)))),rt:rt.id,rtn:rt.n,rg:rt.g,note:S(v.note,300),pay:S(v.pay,10)});return o}
@@ -143,13 +202,14 @@ function set(h,b){const{k,id}=b;let v=b.v;const r=h['x-role'],i=h['x-id'];
  if(r=='driver'&&k=='drivers'){if(!v)return 0;const n={};if('on' in v)n.on=v.on&&(db.drivers[i].bal||0)>mn?1:0;if(v.loc){const a=+v.loc.lat,g=+v.loc.lng;if(!(Math.abs(a)<=90&&Math.abs(g)<=180))return 0;n.loc={lat:a,lng:g}}['car','plate','color'].forEach(f=>{if(f in v)n[f]=String(v[f]).trim().slice(0,60)});if(/^\/u\/[a-f0-9]{32}\.\w+$/.test(String(v.img||'')))n.img=v.img;v=n}
  if(r=='driver'&&(k=='orders'||k=='rides')){if(!v)return 0;const n={};if('did' in v){if(v.did&&(db.drivers[i].bal||0)<=mn)return 0;n.did=v.did}if('rej' in v&&old.did==i&&!v.did){n.rej=[...new Set([...(old.rej||[]),i])];const fee=Math.round(+db.cfg.rejFee)||0;if(k=='orders'&&old.st<3&&fee>0)credit(i,-fee,'غرامة رفض طلب #'+id)}if('st' in v){if((old.did!=i&&n.did!=i)||!((v.st==old.st+1&&(k=='rides'||old.st>=2))||(k=='rides'&&old.st==1&&v.st==0)))return 0;if(v.st==4&&old.t3&&Date.now()-old.t3<(k=='rides'?45e3:3e4))return 0;n.st=v.st;n['t'+v.st]=Date.now()}v=n}
  if(k=='cfg'){v={...(v||{})};['appPct','restPct','taxiPct'].forEach(f=>{if(f in v)v[f]=Math.min(100,Math.max(0,+v[f]||0))});delete v.mig5;if('req2fa' in v)v.req2fa=v.req2fa?1:0;if('theme' in v)v.theme=['auto','royal','night','ocean','ember','carbon','emerald','sunset','rose'].includes(v.theme)?v.theme:'auto';if('rejFee' in v)v.rejFee=Math.min(1e6,Math.max(0,Math.round(+v.rejFee)||0));if('auto' in v)v.auto=v.auto?1:0;if('maxKm' in v)v.maxKm=Math.min(200,Math.max(1,+v.maxKm||10));if('maxDev' in v)v.maxDev=Math.min(20,Math.max(1,Math.round(+v.maxDev)||3));['vpnBlock','timeGuard'].forEach(f=>{if(f in v)v[f]=v[f]?1:0});if('timeTol' in v)v.timeTol=Math.min(60,Math.max(1,Math.round(+v.timeTol)||3));db.cfg={...db.cfg,...v};audit(h,'cfg',id);return 1}
+  if(k=='vars'){if(r!='admin'||!/^[A-Za-z][A-Za-z0-9_]{0,39}$/.test(String(id)))return 0;if(v!=null){const t=['s','n','b'].includes(v.t)?v.t:((old&&old.t)||'s');let x=v.v!==undefined?v.v:(old&&old.v);x=t=='n'?(Number.isFinite(+x)?+x:0):t=='b'?(x&&x!=='0'&&x!=='false'?1:0):String(x==null?'':x).slice(0,500);if(!old&&Object.keys(db.vars).length>=200)return 0;v={v:x,t,pub:('pub' in v?(v.pub?1:0):(old?old.pub:0)),d:String('d' in v?v.d:(old&&old.d)||'').slice(0,120),at:Date.now()}}audit(h,'var',id)}
  if(k=='drivers'&&v&&v.loc)v.locAt=Date.now();
  if(v==null)delete db[k][id];else db[k][id]={...old,...v,id};
  {const nw=db[k]&&db[k][id];if(nw&&nw.paid&&!nw.refd&&nw.st<0&&['orders','rides','cardorders'].includes(k)){nw.refd=1;ccredit(nw.cid,k=='orders'?nw.tot:k=='rides'?nw.fare:nw.p,'استرجاع '+id)}}
  if((k=='orders'||k=='rides')&&v&&db[k][id].st==4&&!db[k][id].chg&&db[k][id].did)charge(k,db[k][id]);
  return 1}
-const SSE=new Set();let VER=0,BT=0;
-const bump=()=>{if(BT)return;BT=setTimeout(()=>{BT=0;VER++;for(const r of SSE)try{r.write('data:'+VER+'\n\n')}catch(e){SSE.delete(r)}},350)};
+const SSE=new Set();let VER=0,BT=0;const bump=()=>{if(BT)return;BT=setTimeout(()=>{BT=0;VER++;const m='data:'+VER+'\n\n';for(const r of SSE)try{r.write(m)}catch(e){SSE.delete(r)}},Math.min(5e3,Math.max(100,+VAR('bumpMs',350)||350)))};
+let LAG=0;setInterval(()=>{const t=Date.now();setImmediate(()=>{LAG=Date.now()-t})},2e3).unref();
 setInterval(()=>{for(const r of SSE)try{r.write(': p\n\n')}catch(e){SSE.delete(r)}},25000);
 const nk=s=>String(s||'').replace(/[\u064B-\u0652\u0640]/g,'').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/\s+/g,' ').trim().toLowerCase();
 function menuOp(h,b){const r=h['x-role'],rid=r=='rest'?h['x-id']:r=='admin'?String(b.rid||''):'',R=db.rests[rid];if(!R||(r!='rest'&&r!='admin'))return null;const cur=(Array.isArray(R.items)?R.items:[]).map(i=>({...i}));
@@ -201,18 +261,33 @@ async function menuAI(rid,b){
  if(!items.length)throw AIE(422,'لم يتم العثور على أصناف بأسعار في الملف');
  return{items:items.slice(0,1000),k:t.input.prices_in_thousands===true?1:0,notes:String(t.input.notes||'').slice(0,400),truncated:j.stop_reason=='max_tokens'?1:0}}
 const rad=x=>x*Math.PI/180,hv=(a,b)=>{const dl=rad(b.lat-a.lat),dg=rad(b.lng-a.lng),x=Math.sin(dl/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dg/2)**2;return 12742*Math.asin(Math.sqrt(x))};
-const busy=d=>Object.values(db.orders).some(o=>o.did==d&&o.st>=0&&o.st<4)||Object.values(db.rides).some(r=>r.did==d&&r.st>=0&&r.st<4);
-let DC=0;function dispatch(){if(db.cfg.auto===0)return;const mx=db.cfg.maxKm||10,now=Date.now();
- const q=[...Object.values(db.orders).filter(o=>(o.st==2||(o.st==1&&o.pt&&o.pt-now<=6e5))&&!o.did&&o.rloc).map(o=>[o,'orders',o.rloc]),...Object.values(db.rides).filter(r=>r.st==0&&!r.did&&r.from).map(r=>[r,'rides',r.from])].sort((a,b)=>a[0].at-b[0].at);
- for(const[o,k,p]of q){let best=null,bd=1e9;
-  for(const d of Object.values(db.drivers)){if(!d.on||(d.bal||0)<=db.cfg.minBal||!d.loc||(d.locAt&&now-d.locAt>12e4)||(o.rej||[]).includes(d.id)||busy(d.id)||(d.type&&d.type!='both'&&d.type!=(k=='rides'?'taxi':'delivery')))continue;const x=hv(d.loc,p);if(x<=mx&&x<bd){bd=x;best=d}}
-  if(best){DC++;o.did=best.id;o.auto=1;o.aat=now;if(k=='rides')o.st=1}}}
-setInterval(()=>{const c=DC;dispatch();if(DC!=c)bump();save()},5000);
+let DC=0;function dispatch(){if(db.cfg.auto===0)return;const mx=db.cfg.maxKm||10,now=Date.now(),I=ix();
+ const q=Object.values(I.pend).filter(([o,k])=>k=='orders'?(o.st==2||(o.st==1&&o.pt&&o.pt-now<=6e5))&&!o.did:o.st==0&&!o.did).sort((a,b)=>a[0].at-b[0].at);
+ if(!q.length)return;const bs=new Set(Object.keys(I.busy)),onl=Object.values(db.drivers).filter(d=>d.on&&d.loc);
+ for(const[o,k,p,id]of q){let best=null,bd=1e9;
+  for(const d of onl){if((d.bal||0)<=db.cfg.minBal||(d.locAt&&now-d.locAt>12e4)||(o.rej||[]).includes(d.id)||bs.has(d.id)||(d.type&&d.type!='both'&&d.type!=(k=='rides'?'taxi':'delivery')))continue;const x=hv(d.loc,p);if(x<=mx&&x<bd){bd=x;best=d}}
+  if(best){DC++;o.did=best.id;o.auto=1;o.aat=now;if(k=='rides')o.st=1;bs.add(best.id);touch(k,id)}}}
+setInterval(()=>{const c=DC;dispatch();if(DC!=c){savel();bump()}},5000);
+// أرشفة اختيارية: تنقل المنتهي والأقدم من N يوم لملفات NDJSON شهرية ثم تحذفه من الذاكرة
+function archive(){const dd=Math.floor(+VAR('archiveDays',0)||0);if(dd<30)return;const lim=Date.now()-dd*864e5,dir=path.join(path.dirname(path.resolve(F)),'archive'),by={},del=[];
+ for(const c of ['orders','rides','tx','ctx'])for(const id in db[c]){const o=db[c][id];if(!o||!(o.at<lim))continue;if((c=='orders'||c=='rides')&&!(o.st==4||o.st<0))continue;const m=new Date(o.at).toISOString().slice(0,7);(by[m]||(by[m]=[])).push(JSON.stringify({c,id,v:o}));del.push([c,id])}
+ if(!del.length)return;try{fs.mkdirSync(dir,{recursive:true});for(const m in by)fs.appendFileSync(path.join(dir,m+'.ndjson'),by[m].join('\n')+'\n')}catch(e){console.error('[ARCHIVE] فشل الكتابة، لم يُحذف شيء:',e.message);return}
+ for(const[c,id]of del)delete db[c][id];IXF=1;save();bump();console.log('[ARCHIVE] moved',del.length,'records')}
+setInterval(()=>{try{archive()}catch(e){console.error('[ARCHIVE]',e.message)}},6e5).unref();
 let UP=process.env.UPLOAD_DIR||path.join(path.dirname(path.resolve(F)),'uploads');
 try{fs.mkdirSync(UP,{recursive:true});fs.accessSync(UP,fs.constants.W_OK)}catch(e){console.error('UPLOAD_DIR not writable, using local uploads:',e.message);UP=path.join(__dirname,'uploads');try{fs.mkdirSync(UP,{recursive:true})}catch(_){}}
 const LIM=+process.env.MAX_UPLOAD_MB>0?process.env.MAX_UPLOAD_MB*1048576:1e8,X={'image/jpeg':'jpg','image/jpg':'jpg','image/png':'png','image/webp':'webp','video/mp4':'mp4','video/x-m4v':'mp4','video/webm':'webm','video/quicktime':'mov','video/3gpp':'3gp'},MT={jpg:'image/jpeg',png:'image/png',webp:'image/webp',mp4:'video/mp4',webm:'video/webm',mov:'video/quicktime','3gp':'video/3gpp'};
 const T={'.html':'text/html;charset=utf-8','.js':'text/javascript;charset=utf-8','.css':'text/css;charset=utf-8'};
-http.createServer((q,s)=>{
+const LIGHT=new Set(['orders','rides','tickets','apps','cardorders','ctop','topups','wd','incw','drivers','wallet','cwallet','cdev']),IXV_=!!process.env.IX_VERIFY;
+const SC=new Map();
+function serveStatic(q,s,f,SH){const ae=String(q.headers['accept-encoding']||''),now=Date.now();let e=SC.get(f);
+ const send=()=>{const ext=path.extname(f),tx=T[ext],enc=tx&&e.br&&/\bbr\b/.test(ae)?'br':tx&&e.gz&&/\bgzip\b/.test(ae)?'gzip':'',h={...SH,'Content-Type':tx||'application/octet-stream','ETag':e.etag,'Cache-Control':ext=='.html'?'no-cache':'public,max-age=60,must-revalidate','Vary':'Accept-Encoding'};
+  if(inm(q,e.etag)){s.writeHead(304,h);return s.end()}const b=enc=='br'?e.br:enc=='gzip'?e.gz:e.buf;if(enc)h['Content-Encoding']=enc;h['Content-Length']=b.length;s.writeHead(200,h);s.end(q.method=='HEAD'?undefined:b)};
+ if(e&&now-e.t<5e3)return send();
+ fs.stat(f,(er,st)=>{if(er||!st.isFile()){s.writeHead(404);return s.end('404')}if(e&&e.m===st.mtimeMs){e.t=now;return send()}
+  fs.readFile(f,(er2,buf)=>{if(er2){s.writeHead(404);return s.end('404')}const ext=path.extname(f);e={t:now,m:st.mtimeMs,buf,etag:'"'+cr.createHash('md5').update(buf).digest('hex').slice(0,16)+'"'};if(T[ext]&&buf.length>512){e.gz=ZL.gzipSync(buf,{level:6});e.br=ZL.brotliCompressSync(buf,{params:{[ZL.constants.BROTLI_PARAM_QUALITY]:5}})}SC.set(f,e);send()})})}
+const SRV=http.createServer((q,s)=>{
+ if(q.url=='/healthz'){s.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});return s.end(JSON.stringify({ok:1,up:process.uptime()|0,mut:MUT,sse:SSE.size,lagMs:LAG,saveMs:DBS.ms(),rssMB:Math.round(process.memoryUsage().rss/1048576)}))}
  q.headers['x-ip']=cip(q);who(q.headers);if(q.headers['x-role']=='customer'&&q.headers['x-id']&&!devCheck(q.headers['x-id'],q.headers))q.headers['x-id']='';
  const SH={'X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY','Referrer-Policy':'no-referrer'};
  const u=q.url.split('?')[0],j=(c,d)=>{s.writeHead(c,{'Content-Type':'application/json'});s.end(JSON.stringify(d))};
@@ -244,16 +319,16 @@ http.createServer((q,s)=>{
   if(b.a=='enable'){if(!d.tfaP||!totp(d.tfaP,b.code,d)){lk(key,1);return j(400,{e:'الرمز غير صحيح'})}d.tfa=d.tfaP;delete d.tfaP;lk(key,0);audit(h,'2fa-on',id);save();bump();return j(200,{ok:1,token:mk('d:'+id)})}
   if(b.a=='disable'){if(!d.tfa||!totp(d.tfa,b.code,d)){lk(key,1);return j(400,{e:'الرمز غير صحيح'})}delete d.tfa;delete d.tfaP;AU.rev['d:'+id]=Date.now();saveA();audit(h,'2fa-off',id);save();bump();return j(200,{ok:1})}
   j(400,{e:'طلب غير صالح'})}catch(e){j(400,{e:'طلب غير صالح'})}});return}
- if(u=='/api/stream'){s.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive','X-Accel-Buffering':'no'});s.write('retry:1500\n\ndata:'+VER+'\n\n');SSE.add(s);q.on('close',()=>SSE.delete(s));return}
+ if(u=='/api/stream'){if(SSE.size>=Math.max(0,+VAR('maxSSE',20000)||0)){s.writeHead(204);return s.end()}s.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive','X-Accel-Buffering':'no'});s.write('retry:1500\n\ndata:'+VER+'\n\n');SSE.add(s);q.on('close',()=>SSE.delete(s));return}
  if(u=='/api/menu'&&q.method=='POST'){let b='';q.on('data',c=>{b+=c;if(b.length>3e6)q.destroy()});q.on('end',()=>{try{if(ok(q.headers)){const r=menuOp(q.headers,JSON.parse(b));if(r){save();bump();return j(200,r)}}}catch(e){}j(403,{})});return}
  if(u=='/api/menu-ai'&&q.method=='POST'){let b='',big=0;q.on('data',c=>{if(big)return;b+=c;if(b.length>18e6){big=1;b='';q.resume();j(413,{e:'الملفات كبيرة جدًا، قلّل عدد الصور أو حجمها'})}});q.on('end',async()=>{if(big)return;try{const h=q.headers;if(!ok(h))return j(401,{e:'انتهت الجلسة'});const r=h['x-role'];if(r!='rest'&&r!='admin')return j(403,{});b=JSON.parse(b);const rid=r=='rest'?h['x-id']:String(b.rid||'');if(!db.rests[rid])return j(403,{});
   const out=await menuAI(rid,b);j(200,out)}catch(e){j(e&&typeof e.code=='number'?e.code:500,{e:e&&typeof e.code=='number'?e.message:'تعذر تحليل المنيو'})}});return}
  if(u=='/api/menu-ai/status')return ok(q.headers)?j(200,{ai:!!AIK}):j(401,{});
- if(u=='/api/db')return ok(q.headers)?j(200,view(q.headers)):j(401,{});
- if(u=='/api/set'&&q.method=='POST'){if(rl(q.headers)){q.resume();return j(429,{e:'طلبات كثيرة'})}let b='';q.on('data',c=>{b+=c;if(b.length>8e6)q.destroy()});q.on('end',()=>{try{if(ok(q.headers)&&set(q.headers,JSON.parse(b))){dispatch();save();bump();return j(200,{ok:1})}}catch(e){}j(403,{})});return}
+ if(u=='/api/db')return ok(q.headers)?sendView(q,s):j(401,{});
+ if(u=='/api/set'&&q.method=='POST'){if(rl(q.headers)){q.resume();return j(429,{e:'طلبات كثيرة'})}let b='';q.on('data',c=>{b+=c;if(b.length>8e6)q.destroy()});q.on('end',()=>{try{const bb=JSON.parse(b);if(q.headers['x-role']=='customer'&&+VAR('maintenance',0)&&['orders','rides','cardorders','ctop'].includes(bb.k))return j(503,{c:'maint',e:String(VAR('maintMsg','التطبيق في صيانة قصيرة'))});if(ok(q.headers)&&set(q.headers,bb)){const K=bb.k,hot=q.headers['x-role']=='driver'&&K=='drivers'&&bb.v&&typeof bb.v=='object'&&Object.keys(bb.v).every(f=>f=='loc'||f=='on'),light=hot||LIGHT.has(K);touch(K,String(bb.id));const c0=DC;dispatch();if(IXV_)ixCheck('set:'+K);if(light&&(!hot||DC==c0))savel();else save();bump();return j(200,{ok:1})}}catch(e){}j(403,{})});return}
  if(u=='/api/upload'&&q.method=='POST'){const e=X[(q.headers['content-type']||'').split(';')[0].trim()];if(!ok(q.headers)){q.resume();return j(401,{e:'انتهت الجلسة'})}if(!e){q.resume();return j(415,{e:'نوع الملف غير مدعوم'})}const LM=['admin','support'].includes(q.headers['x-role'])?LIM:Math.min(LIM,15e6);if(+q.headers['content-length']>LM){q.resume();return j(413,{e:'الملف كبير'})}const n=cr.randomBytes(16).toString('hex')+'.'+e,fp=path.join(UP,n);let sz=0,bad=0;try{fs.mkdirSync(UP,{recursive:true})}catch(_){}const w=fs.createWriteStream(fp);q.on('data',c=>{sz+=c.length;if(sz>LM&&!bad){bad=1;q.unpipe(w);w.destroy();fs.unlink(fp,()=>{});j(413,{e:'الملف كبير'});q.resume()}});q.pipe(w);w.on('finish',()=>{if(!bad)j(200,{url:'/u/'+n})});w.on('error',()=>{if(!bad){bad=1;j(500,{e:'تعذر حفظ الملف'})}});return}
  if(u.startsWith('/u/')){const n=path.basename(u),m=n.match(/^[a-f0-9]{32}\.(\w+)$/);if(!m||!MT[m[1]]){s.writeHead(404);return s.end()}const p=path.join(UP,n);fs.stat(p,(er,st)=>{if(er){s.writeHead(404);return s.end()}const r=(q.headers.range||'').match(/bytes=(\d*)-(\d*)/);let a=0,b=st.size-1,c=200;if(r){a=r[1]?+r[1]:0;b=r[2]?Math.min(+r[2],b):b;c=206}s.writeHead(c,{'Content-Type':MT[m[1]],'Accept-Ranges':'bytes','Content-Length':b-a+1,'Cache-Control':'private,max-age=86400','X-Content-Type-Options':'nosniff',...(c==206?{'Content-Range':`bytes ${a}-${b}/${st.size}`}:{})});fs.createReadStream(p,{start:a,end:b}).pipe(s)});return}
  const f=path.join(PUB,u=='/'?'customer.html':u);
- if(!f.startsWith(PUB))return s.end();
- fs.readFile(f,(e,d)=>{if(e){s.writeHead(404);return s.end('404')}s.writeHead(200,{...SH,'Content-Type':T[path.extname(f)]||'application/octet-stream'});s.end(d)})
-}).listen(process.env.PORT||3000);
+ if(!f.startsWith(PUB)){s.writeHead(403);return s.end()}
+ return serveStatic(q,s,f,SH)
+});SRV.keepAliveTimeout=65e3;SRV.headersTimeout=66e3;SRV.listen(process.env.PORT||3000,()=>console.log('[SERVER] port',process.env.PORT||3000));
