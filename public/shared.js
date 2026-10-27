@@ -45,4 +45,4 @@ addEventListener('DOMContentLoaded',()=>{
   s.onclick=e=>{const b=e.target.closest('button');if(b){cur=b.dataset.t;ap(cur);s.querySelectorAll('button').forEach(x=>x.classList.toggle('a',x==b));return}if(e.target==s)s.remove()};document.body.appendChild(s)};
  new MutationObserver(tg).observe(document.body,{childList:true,subtree:true});tg()})})();
 
-async function upl(file,mx){let b=file;if((file.type||'').startsWith('image/'))b=await new Promise(r=>imgPick(file,d=>fetch(d).then(x=>x.blob()).then(r),mx||1280));const r=await fetch('/api/upload',{method:'POST',headers:{...H(),'Content-Type':b.type||file.type},body:b});if(!r.ok)throw 0;return(await r.json()).url}
+async function upl(file,mx){let b=file;if((file.type||'').startsWith('image/'))b=await new Promise(r=>imgPick(file,d=>fetch(d).then(x=>x.blob()).then(r),mx||1280));const r=await fetch('/api/upload',{method:'POST',headers:{...H(),'Content-Type':b.type||file.type||(/\.mov$/i.test(file.name||'')?'video/quicktime':'video/mp4')},body:b});if(!r.ok)throw r.status;return(await r.json()).url}
