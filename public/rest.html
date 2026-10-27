@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-app="rest"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>تكسي المتميز - تطبيق المطعم</title>
+<link rel="stylesheet" href="shared.css"><script src="config.js"></script><script src="shared.js"></script>
+<style>
+#app{max-width:1000px}.g2{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:12px}.g2>.card{margin:0}
+.pst{min-height:46px;font-size:16px}.pt button{min-width:64px}.pt{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.cnt{background:#e8412c;color:#fff;border-radius:99px;font-size:12px;min-width:20px;padding:0 6px;margin-inline-start:6px}
+.it{display:flex;justify-content:space-between;gap:8px;font-weight:700}.crr{border-inline-start:5px solid var(--pr)}
+.tl{font-size:22px;font-weight:800}
+</style></head>
+<body><div id="app"><div id="hd"></div><div id="tm" class="map" hidden></div><div id="v"></div></div>
+<script>
+auth('rest');
+let tab='o',first=1,trk=null,seen=null,ac=null,
+ ap=localStorage.rap!=='0',snd=localStorage.rsn!=='0',pw=localStorage.rpw||'58';
+const R=()=>DB.rests[AUTH.id]||{items:[]},sub=o=>(o.its||[]).reduce((s,i)=>s+i.q*i.p,0),
+ hm=t=>new Date(t).toLocaleTimeString('ar-IQ',{hour:'2-digit',minute:'2-digit'}),
+ dayEnd=()=>{const d=new Date();d.setHours(5,0,0,0);if(d<=Date.now())d.setDate(d.getDate()+1);return +d},
+ CATS=()=>[...new Set((R().items||[]).map(i=>i.cat||''))],cn=c=>c||'القائمة';
+document.addEventListener('click',()=>{try{ac=ac||new(window.AudioContext||webkitAudioContext)();ac.resume()}catch(e){}});
+function beep(){try{ac=ac||new(window.AudioContext||webkitAudioContext)();const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=880;g.gain.value=.35;o.start();o.stop(ac.currentTime+.3);navigator.vibrate&&navigator.vibrate([250,100,250])}catch(e){}}
+setInterval(()=>{if(snd&&AUTH.pin&&Object.values(DB.orders).some(o=>o.st==0))beep()},4000);
+const wl=()=>{try{navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{})}catch(e){}};document.addEventListener('visibilitychange',()=>!document.hidden&&wl());
+
+function choose(t,L){const s=document.createElement('div');s.className='sheet';s.innerHTML=`<div><b style="font-size:18px">${esc(t)}</b><div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">${L.map((x,i)=>`<button class="${x[2]||'l'}" data-i="${i}">${esc(x[0])}</button>`).join('')}</div></div>`;s.onclick=e=>{const b=e.target.closest('button');if(b){s.remove();L[b.dataset.i][1]()}else if(e.target==s)s.remove()};document.body.appendChild(s)}
+const pauseList=(ap2,resume)=>[...(resume?[['▶ تشغيل الآن',()=>ap2({pu:0,off:0}),'']]:[]),['⏸ إيقاف لمدة ساعة',()=>ap2({pu:Date.now()+36e5,off:0}),''],['⏸ إيقاف لمدة ساعتين',()=>ap2({pu:Date.now()+72e5,off:0}),''],['⏸ إيقاف حتى نهاية اليوم',()=>ap2({pu:dayEnd(),off:0}),''],['⛔ إيقاف حتى أعيد تشغيله',()=>ap2({pu:0,off:1}),'d']];
+
+/* ---- المطعم: الحالة ---- */
+const rState=r=>!r.open?['off','مغلق']:r.pu>Date.now()?['w','موقوف مؤقتًا حتى '+hm(r.pu)]:['on','مفتوح'];
+function rStatus(){const r=R();choose('حالة المطعم',[['🟢 فتح المطعم واستقبال الطلبات',()=>act('rests',AUTH.id,{open:1,pu:0}),''],['⏸ إيقاف الطلبات ساعة',()=>act('rests',AUTH.id,{open:1,pu:Date.now()+36e5}),''],['⏸ إيقاف الطلبات ساعتين',()=>act('rests',AUTH.id,{open:1,pu:Date.now()+72e5}),''],['⏸ إيقاف حتى نهاية اليوم',()=>act('rests',AUTH.id,{open:1,pu:dayEnd()}),''],['🔴 إغلاق حتى أعيد التشغيل',()=>act('rests',AUTH.id,{open:0,pu:0}),'d']])}
+/* ---- المنيو ---- */
+const setItem=(id,p)=>act('rests',AUTH.id,{items:(R().items||[]).map(i=>i.id==id?{...i,...p}:i)});
+const setCat=(c,p)=>{const cs=R().cs||{};return act('rests',AUTH.id,{cs:{...cs,[c]:{...(cs[c]||{}),...p}}})};
+const iSt=i=>{const r=R(),c=(r.cs&&r.cs[i.cat||''])||{};
+ if(i.off)return['off','موقوف حتى تشغيله'];if(i.pu>Date.now())return['off','موقوف حتى '+hm(i.pu)];
+ if(c.off)return['off','القسم موقوف'];if(c.pu>Date.now())return['off','القسم موقوف حتى '+hm(c.pu)];
+ if(!inT(i.f,i.t))return['w','خارج وقت الصنف'];if(!inT(c.f,c.t))return['w','خارج وقت القسم ('+c.f+' – '+c.t+')'];return['on','متاح']};
+const pauseItem=id=>{const i=R().items.find(x=>x.id==id);choose(i.n,pauseList(p=>setItem(id,p),0))};
+function menuT(){const r=R(),g={};(r.items||[]).forEach(i=>(g[i.cat||'']=g[i.cat||'']||[]).push(i));
+ return Object.entries(g).map(([c,a])=>`<h2>${esc(cn(c))}</h2><div class="g2">${a.map(i=>{const s=iSt(i),paused=i.off||i.pu>Date.now();return `<div class="card row sp" style="opacity:${s[0]=='on'?1:.7}"><div class="g"><b>${esc(i.n)}</b> <span class="tag ${s[0]}">${s[1]}</span><div class="mu">${fmt(i.p)}</div></div>${paused?`<button onclick="setItem('${i.id}',{off:0,pu:0})">تشغيل</button>`:s[0]=='on'?`<button class="d" onclick="pauseItem('${i.id}')">إيقاف ▾</button>`:''}</div>`}).join('')}</div>`).join('')||'<p class="mu">لا توجد أصناف. يضيفها مالك التطبيق أو الدعم.</p>'}
+/* ---- الأقسام وأوقاتها ---- */
+const PRE=[['فطور','06:00','12:00'],['غداء','12:00','18:00'],['عشاء','18:00','00:00'],['٢٤ ساعة','','']];
+function catT(){const cs=R().cs||{};return '<div class="mu">حدد وقت ظهور كل قسم للزبائن. يُطفأ القسم تلقائيًا خارج الوقت المحدد ويعود في موعده (يدعم تجاوز منتصف الليل مثل 13:00 – 01:00).</div><div class="g2">'+CATS().map((c,k)=>{const x=cs[c]||{},on=!x.off&&!(x.pu>Date.now()),paused=x.off||x.pu>Date.now(),ins=inT(x.f,x.t);
+ return `<div class="card"><div class="row sp"><b>${esc(cn(c))}</b><span class="tag ${paused?'off':ins?'on':'w'}">${paused?(x.off?'موقوف حتى تشغيله':'موقوف حتى '+hm(x.pu)):ins?'ظاهر الآن':'خارج الوقت'}</span></div>
+<div class="row" style="margin-top:8px"><label class="mu g">من<input id="cf${k}" type="time" value="${esc(x.f||'')}"></label><label class="mu g">إلى<input id="ct${k}" type="time" value="${esc(x.t||'')}"></label></div>
+<div class="pt">${PRE.map(p=>`<button class="l" onclick="$('#cf${k}').value='${p[1]}';$('#ct${k}').value='${p[2]}'">${p[0]}</button>`).join('')}</div>
+<div class="pt"><button onclick="setCat(CATS()[${k}],{f:$('#cf${k}').value,t:$('#ct${k}').value})">حفظ الوقت</button>${paused?`<button onclick="setCat(CATS()[${k}],{off:0,pu:0})">تشغيل القسم</button>`:`<button class="d" onclick="pauseCat(${k})">إيقاف القسم ▾</button>`}</div></div>`}).join('')+'</div>'}
+const pauseCat=k=>{const c=CATS()[k];choose('إيقاف قسم '+cn(c),pauseList(p=>setCat(c,p),0))};
+/* ---- الطلبات ---- */
+const eta=o=>{const d=DB.drivers[o.did],r=R();if(!d)return null;if(!d.loc||!r.loc)return{m:'بانتظار موقع الكابتن…'};const km=dist(d.loc,r.loc),stale=d.locAt&&Date.now()-d.locAt>12e4;
+ if(o.st>=3)return{m:'استلم الطلب وهو في الطريق للزبون',ok:1};if(stale)return{m:'إشارة الكابتن قديمة'};if(km<.1)return{m:'وصل إلى المطعم ✓',ok:1};return{m:`${km.toFixed(1)} كم • يصل خلال ~${Math.max(1,Math.round(km*1.3*2.5))} د`,ok:1}};
+const courier=o=>{if(!o.did)return `<div class="mu">⏳ لم يُعيَّن كابتن بعد${o.st==1?' — يُعيَّن تلقائيًا قبل جاهزية الطلب بدقائق':''}</div>`;const d=DB.drivers[o.did]||{},e=eta(o)||{};return `<div class="card crr" style="margin:8px 0"><div class="row sp"><b>🛵 ${esc(d.n||'الكابتن')} ${esc(d.car||'')}</b>${d.ph?`<a class="btn" href="tel:${esc(d.ph)}">اتصال</a>`:''}</div><div class="${e.ok?'on':'mu'}"><b>${e.m||''}</b></div><button class="l" onclick="trk='${o.id}';draw()">عرض على الخريطة</button></div>`};
+const lines=o=>(o.its||[]).map(i=>`<div class="it"><span>${i.q} × ${esc(i.n)}</span><span>${fmt(i.q*i.p)}</span></div>`).join('');
+const age=o=>Math.max(0,Math.floor((Date.now()-o.at)/6e4));
+function accO(id,m){act('orders',id,{st:1,prep:m,pt:Date.now()+m*6e4});if(ap)setTimeout(()=>printO(id),900)}
+const rejO=id=>choose('سبب رفض الطلب',[['نفدت مادة',()=>act('orders',id,{st:-1,why:'نفدت مادة'}),'d'],['المطعم مزدحم حاليًا',()=>act('orders',id,{st:-1,why:'المطعم مزدحم'}),'d'],['سبب آخر',()=>act('orders',id,{st:-1,why:'رفض المطعم'}),'d']]);
+function ordT(){const O=Object.values(DB.orders).sort((a,b)=>a.at-b.at),nw=O.filter(o=>o.st==0),pr=O.filter(o=>o.st==1),rd=O.filter(o=>o.st==2||o.st==3),dn=O.filter(o=>o.st==4||o.st<0).sort((a,b)=>b.at-a.at).slice(0,6);
+ const card=(o,body)=>`<div class="card"><div class="row sp"><b>طلب #${esc(o.id.slice(-5))}</b><span class="mu">قبل ${age(o)} د</span></div>${lines(o)}<div class="row sp"><b>المجموع</b><b>${fmt(sub(o))}</b></div>${o.note?`<div class="mu">📝 ${esc(o.note)}</div>`:''}${body}</div>`,pb=o=>`<button class="l" onclick="printO('${o.id}')">🖨️ طباعة</button>`;
+ return (nw.length?`<h2>🔔 طلبات جديدة (${nw.length})</h2><div class="g2">${nw.map(o=>card(o,`<div class="mu" style="margin-top:6px">اقبل وحدد وقت التجهيز:</div><div class="pt">${[10,15,20,30,45,60].map(m=>`<button class="pst" onclick="accO('${o.id}',${m})">${m} د</button>`).join('')}</div><div class="pt"><button class="d" onclick="rejO('${o.id}')">رفض</button>${pb(o)}</div>`)).join('')}</div>`:'')
+ +(pr.length?`<h2>👨‍🍳 قيد التحضير (${pr.length})</h2><div class="g2">${pr.map(o=>{const left=Math.ceil((o.pt-Date.now())/6e4);return card(o,`<div class="tl ${left<0?'off':''}">${left>=0?'⏱ متبقي '+left+' د':'⚠ تأخر '+(-left)+' د'}</div><div class="mu">الجاهزية المتوقعة ${hm(o.pt)}</div>${courier(o)}<div class="pt"><button class="big" style="margin:0;flex:1" onclick="act('orders','${o.id}',{st:2})">✔ الطلب جاهز</button></div><div class="pt"><button class="l" onclick="act('orders','${o.id}',{pt:${(o.pt||Date.now())}+3e5})">+5 د</button><button class="l" onclick="act('orders','${o.id}',{pt:${(o.pt||Date.now())}+6e5})">+10 د</button>${pb(o)}<button class="d" onclick="rejO('${o.id}')">إلغاء</button></div>`)}).join('')}</div>`:'')
+ +(rd.length?`<h2>🛵 جاهزة / بالطريق (${rd.length})</h2><div class="g2">${rd.map(o=>card(o,`<span class="tag ${o.st==3?'s':'k'}">${o.st==3?'استلمها الكابتن':'جاهز — بانتظار الكابتن'}</span>${courier(o)}<div class="pt">${pb(o)}</div>`)).join('')}</div>`:'')
+ +(!nw.length&&!pr.length&&!rd.length?'<div class="card"><p class="mu">لا توجد طلبات نشطة. ستظهر هنا مع تنبيه صوتي فور وصولها.</p></div>':'')
+ +(dn.length?`<h2>آخر الطلبات</h2>${dn.map(o=>`<div class="card row sp"><div><b>#${esc(o.id.slice(-5))}</b> <span class="tag ${o.st<0?'x':'s'}">${o.st<0?'ملغي'+(o.why?' — '+esc(o.why):''):'سُلّم'}</span><div class="mu">${(o.its||[]).map(i=>i.q+' × '+esc(i.n)).join('، ')}</div></div><div class="bt">${pb(o)}</div></div>`).join('')}`:'')}
+/* ---- الطباعة الحرارية ---- */
+function printO(id){const o=DB.orders[id];if(!o)return;const w=pw=='80'?'72mm':'48mm',f=document.createElement('iframe');f.style.cssText='position:fixed;left:-9999px;width:0;height:0;border:0';document.body.appendChild(f);const d=f.contentDocument;d.open();
+ d.write(`<html dir="rtl"><head><meta charset="utf-8"><style>@page{margin:0}body{margin:0;padding:2mm;width:${w};font:bold 13px/1.55 Tahoma,sans-serif;color:#000}h1{font-size:19px;text-align:center;margin:0}hr{border:0;border-top:1px dashed #000;margin:4px 0}.r{display:flex;justify-content:space-between;gap:6px}.c{text-align:center}</style></head><body><h1>${esc(R().n)}</h1><div class="c">طلب #${esc(o.id.slice(-5))}</div><div class="c">${new Date(o.at).toLocaleString('ar-IQ')}</div><hr>${(o.its||[]).map(i=>`<div class="r"><span>${i.q} × ${esc(i.n)}</span><span>${fmt(i.q*i.p)}</span></div>`).join('')}<hr><div class="r"><span>المجموع</span><span>${fmt(sub(o))}</span></div>${o.pt?`<div>التجهيز: ${hm(o.pt)}</div>`:''}${o.note?`<hr><div>ملاحظة: ${esc(o.note)}</div>`:''}<div>الزبون: ${esc(o.cn||'')}</div><hr><div class="c">— تكسي المتميز —</div><br></body></html>`);d.close();
+ setTimeout(()=>{try{f.contentWindow.focus();f.contentWindow.print()}catch(e){}setTimeout(()=>f.remove(),3000)},300)}
+/* ---- الإعدادات ---- */
+function setT(){return `<div class="card"><b>الطابعة والتنبيهات</b><label class="row" style="margin-top:8px"><input type="checkbox" ${snd?'checked':''} onchange="snd=this.checked;localStorage.rsn=snd?1:0"> تنبيه صوتي متكرر للطلبات الجديدة</label><label class="row"><input type="checkbox" ${ap?'checked':''} onchange="ap=this.checked;localStorage.rap=ap?1:0"> طباعة تلقائية عند قبول الطلب</label><label class="mu">عرض ورق الطابعة<select onchange="pw=this.value;localStorage.rpw=pw"><option value="58" ${pw=='58'?'selected':''}>58 ملم</option><option value="80" ${pw=='80'?'selected':''}>80 ملم</option></select></label><button class="l" onclick="testP()">🖨️ طباعة تجريبية</button></div><button class="l big" onclick="logout()">تسجيل الخروج</button>`}
+function testP(){DB.orders.__t={id:'TEST1',at:Date.now(),cn:'تجربة',its:[{n:'صنف تجريبي',q:1,p:1000}]};printO('__t');delete DB.orders.__t}
+/* ---- العرض ---- */
+async function lg(){signin('rest',$('#li').value.trim(),$('#lp').value.trim());if(await load()&&DB.rests[AUTH.id]){wl();draw()}else{alert('بيانات الدخول غير صحيحة');logout()}}
+function map(){const O=Object.values(DB.orders).filter(o=>o.did&&o.st>=1&&o.st<4&&DB.drivers[o.did]&&DB.drivers[o.did].loc),o=O.find(x=>x.id==trk)||O[0];$('#tm').hidden=!o||tab!='o';if(!o||tab!='o')return;const d=DB.drivers[o.did],r=R(),pts=[{p:d.loc,l:'ك',t:'الكابتن'},{p:r.loc,l:'م',t:'المطعم'}];if(o.st==3)pts.push({p:o.loc,l:'ز',t:'الزبون'});showMap($('#tm'),pts)}
+function draw(){const hd=$('#hd'),v=$('#v');if(!AUTH.pin||!DB.rests[AUTH.id]){$('#tm').hidden=1;hd.innerHTML='';return v.innerHTML='<h1>دخول المطعم</h1><div class="card"><input id="li" placeholder="رمز المطعم"><input id="lp" type="password" placeholder="الرمز السري"><button class="big" onclick="lg()">دخول</button></div>'}
+ const r=R(),s=rState(r),nn=Object.values(DB.orders).filter(o=>o.st==0).length;
+ hd.innerHTML=`<div class="row sp"><h1>${esc(r.n)}</h1><button class="pst ${s[0]=='on'?'':s[0]=='off'?'d':'l'}" onclick="rStatus()">${s[0]=='on'?'🟢':s[0]=='off'?'🔴':'⏸'} ${s[1]} ▾</button></div><div class="tabs">${[['o','الطلبات'],['m','المنيو والتوفر'],['c','الأقسام وأوقاتها'],['g','الإعدادات']].map(t=>`<button class="${t[0]==tab?'a':''}" onclick="tab='${t[0]}';draw()">${t[1]}${t[0]=='o'&&nn?`<span class="cnt">${nn}</span>`:''}</button>`).join('')}</div>`;
+ v.innerHTML=({o:ordT,m:menuT,c:catT,g:setT})[tab]();map()}
+start(()=>{if(AUTH.pin&&DB.orders){const ids=Object.values(DB.orders).filter(o=>o.st==0).map(o=>o.id);if(seen===null)seen=new Set(ids);else{const nn=ids.filter(x=>!seen.has(x));ids.forEach(x=>seen.add(x));if(nn.length)beep()}}
+ if(first||!busy()){if(first&&AUTH.pin)wl();first=0;draw()}});
+</script></body></html>
