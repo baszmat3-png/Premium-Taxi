@@ -19,7 +19,7 @@ async function set(k,id,v){try{const r=await fetch('/api/set',{method:'POST',hea
 async function act(k,id,v){if(!await set(k,id,v))alert('تعذر تنفيذ العملية. ربما أخذها شخص آخر.');draw()}
 let _last='';
 const start=fn=>{if(window.draw&&!window.draw.__k){const d0=window.draw;window.draw=function(){return keepScroll(()=>d0.apply(this,arguments))};window.draw.__k=1}
-let ld=0,pd=0;const t=async()=>{if(ld){pd=1;return}ld=1;try{if(await load()){const j=JSON.stringify(DB),ch=j!=_last;_last=j;fn(ch)}}finally{ld=0;if(pd){pd=0;t()}}};t();setInterval(t,8000);
+let ld=0,pd=0;const t=async()=>{if(ld){pd=1;return}ld=1;try{if(await load()||!window.__s1){window.__s1=1;const j=JSON.stringify(DB),ch=j!=_last;_last=j;fn(ch)}}finally{ld=0;if(pd){pd=0;t()}}};t();setInterval(t,8000);
 try{if(window.EventSource){const es=new EventSource('/api/stream');es.onmessage=()=>t()}}catch(e){}};
 const busy=()=>/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
 const IC=[[/مندي|كبسة|دجاج|رز|تمن/,'🍛'],[/مشاوي|كباب|تكة|طاووق|لحم/,'🍢'],[/بيتزا/,'🍕'],[/برغر/,'🍔'],[/شاورما|سندويش/,'🌯'],[/سمك|مسكوف|أسماك/,'🐟'],[/حلوي|كنافة|بقلاوة|كيك/,'🍰'],[/قهوة/,'☕'],[/عصير|مشروب|كولا|لبن/,'🥤'],[/سلطة|مقبلات|فلافل/,'🥗'],[/فطور/,'🍳']];
