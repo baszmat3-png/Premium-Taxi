@@ -1,0 +1,12 @@
+واجهات تكسي المتميز (داخل مجلد public)
+
+1) الزبون          customer.html            (يفتح: /customer.html)
+2) الكابتن + الدلفري driver.html             (يفتح: /driver.html) - نفس التطبيق للتكسي وتوصيل الطعام
+3) صاحب المطعم     rest.html                (يفتح: /rest.html)
+4) صاحب التطبيق    panel.html?r=admin       (لوحة التحكم)
+5) الدعم           panel.html?r=support
+
+ملفات مشتركة لازمة لكل الواجهات: shared.js, shared.css, themes.js, themes.css, bali.css
+
+تنبيه: الواجهات تعمل مع السيرفر (server.js) لجلب البيانات، وليست صفحات ثابتة مستقلة.
+شغّل: node server.js ثم افتح الروابط أعلاه.
