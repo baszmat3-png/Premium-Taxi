@@ -16,7 +16,7 @@ let MUT=0;
 const F=process.env.DATA_FILE||'data.json',ADMIN=process.env.ADMIN_PIN||'1234',KEY=process.env.GOOGLE_MAPS_KEY||'',PUB=path.join(__dirname,'public');
 let db={codes:{},exp:{},topups:{},tx:{},customers:{},rests:{},orders:{},rides:{},drivers:{},tickets:{},staff:{},offers:{},cards:{},apps:{},cardorders:{},wd:{},incw:{},ctop:{},ctx:{},cfg:{base:1500,km:700,min:3000,foodKm:400,auto:1,maxKm:10}};
 {const L0=loadJSON(F);if(L0)Object.assign(db,L0)}
-db.cfg={maxDev:3,vpnBlock:1,timeGuard:1,timeTol:3,appPct:15,restPct:5,taxiPct:5,minBal:-15000,pay:[],minWd:15000,rt:[{id:'eco',n:'توفير',d:'التكسي الأوفر',m:1,g:'taxi'},{id:'super',n:'سوبر',d:'الخيار الأفضل',m:1.18,g:'taxi'},{id:'plus',n:'بلس',d:'راحة أكثر',m:1.3,g:'taxi'},{id:'box',n:'بوكس',d:'توصيل طرود وأغراض',m:1.1,g:'box'}],...db.cfg};if(!db.cfg.mig5){db.cfg.mig5=1;db.cfg.restPct=5;db.cfg.taxiPct=5}db.wd=db.wd||{};db.incw=db.incw||{};db.ctop=db.ctop||{};db.ctx=db.ctx||{};db.vars=db.vars||{};
+db.cfg={maxDev:3,vpnBlock:1,timeGuard:1,timeTol:3,appPct:15,restPct:5,taxiPct:5,minBal:-15000,pay:[],minWd:15000,abOn:1,abWarn:4,abBan:6,abDays:3,abWin:30,abGrace:60,rt:[{id:'eco',n:'توفير',d:'التكسي الأوفر',m:1,g:'taxi'},{id:'super',n:'سوبر',d:'الخيار الأفضل',m:1.18,g:'taxi'},{id:'plus',n:'بلس',d:'راحة أكثر',m:1.3,g:'taxi'},{id:'box',n:'بوكس',d:'توصيل طرود وأغراض',m:1.1,g:'box'}],...db.cfg};if(!db.cfg.mig5){db.cfg.mig5=1;db.cfg.restPct=5;db.cfg.taxiPct=5}db.wd=db.wd||{};db.incw=db.incw||{};db.ctop=db.ctop||{};db.ctx=db.ctx||{};db.vars=db.vars||{};
 for(const[k,x]of Object.entries({maintenance:{v:0,t:'b',pub:1,d:'وضع الصيانة: يوقف الطلبات الجديدة من الزبائن ويعرض لهم رسالة'},maintMsg:{v:'التطبيق في صيانة قصيرة، نعود قريبًا.',t:'s',pub:1,d:'رسالة الصيانة'},banner:{v:'',t:'s',pub:1,d:'شريط إعلان أعلى كل التطبيقات (فارغ = مخفي)'},rlPerMin:{v:240,t:'n',pub:0,d:'حد طلبات المستخدم الواحد في الدقيقة'},bumpMs:{v:350,t:'n',pub:0,d:'تأخير بث التحديثات الفورية (مللي ثانية) — ارفعه عند الضغط العالي'},maxSSE:{v:20000,t:'n',pub:0,d:'أقصى اتصالات بث مباشر؛ الزائد يعمل بالاستطلاع'},archiveDays:{v:0,t:'n',pub:0,d:'أرشفة الطلبات/الرحلات المنتهية الأقدم من N يوم إلى مجلد archive (0 = إيقاف). يبقي السيرفر سريعًا مع نمو السجل؛ الرصيد والمحاسبة لا تتأثر لكن الأقدم يختفي من اللوحة'}}))if(!db.vars[k])db.vars[k]={id:k,...x,at:Date.now()};
 const VAR=(k,d)=>{const x=db.vars[k];return x==null||x.v==null||x.v===''?d:x.v};
 let PVM=-1,PVC={};function PV(){if(PVM!==MUT){PVM=MUT;PVC={};for(const k in db.vars){const x=db.vars[k];if(x&&x.pub)PVC[k]=x.v}}return PVC}
@@ -50,7 +50,16 @@ setInterval(()=>{if(IPC.size>5000)IPC.clear()},36e5).unref();
 const MSG={vpn:'تم اكتشاف VPN أو بروكسي. أوقفه ثم أعد المحاولة.',time:'وقت جهازك غير صحيح. فعّل «التاريخ والوقت التلقائي» من إعدادات الهاتف ثم أعد فتح التطبيق.'};
 const gTime=h=>{const c=db.cfg;if(c.timeGuard===0)return null;const t=+h['x-ct'];return(!(t>0)||Math.abs(Date.now()-t)>Math.max(1,+c.timeTol||3)*6e4)?{c:'time',e:MSG.time}:null};
 const gVpn=h=>{if(db.cfg.vpnBlock===0)return null;const ip=h['x-ip'],x=IPC.get(ip);if(x&&x.v&&x.v.vpn)return{c:'vpn',e:MSG.vpn};if(!x||(!x.r&&Date.now()-x.t>=6e4))ipinfo(ip);return null};
-const guard=h=>{const r=h['x-role'];return(r=='customer'||r=='driver')?(gTime(h)||gVpn(h)):null};
+/* ---- حماية من التلاعب: إلغاء الطلب بعد الموافقة عليه (تحذير ثم إيقاف مؤقت) — الأرقام من لوحة التحكم ---- */
+const abK=()=>{const c=db.cfg,w=Math.min(50,Math.max(1,Math.round(+c.abWarn)||4));return{on:c.abOn!==0,w,b:Math.min(100,Math.max(w,Math.round(+c.abBan)||6)),days:Math.min(365,Math.max(1,Math.round(+c.abDays)||3)),win:Math.min(365,Math.max(0,Math.round(+c.abWin)||0)),gr:Math.min(600,Math.max(0,Math.round(+c.abGrace)||0))}};
+const abAct=c=>{const K=abK(),n=Date.now(),w=K.win*864e5;return(c&&c.ab||[]).filter(t=>!w||n-t<w).length};
+const abInfo=i=>{const c=db.customers[i],K=abK();return c&&K.on?{n:abAct(c),w:K.w,b:K.b,d:K.days}:0};
+function abNew(cid){const c=db.customers[cid],K=abK();if(!c||!K.on)return;const now=Date.now(),w=K.win*864e5;c.ab=(c.ab||[]).filter(t=>!w||now-t<w);c.ab.push(now);if(c.ab.length>200)c.ab=c.ab.slice(-200);
+ if(c.ab.length>=K.b){const until=now+K.days*864e5;c.ban={at:now,until,n:c.ab.length};c.ab=[];db.banDev=db.banDev||{};for(const d of Object.keys(c.devs||{}))db.banDev[d]=until;audit({'x-role':'system','x-id':cid},'ab-ban',cid,K.days)}CV++}
+const abTxt=u=>{const t=Math.max(0,Math.ceil((u-Date.now())/36e5)),d=Math.floor(t/24),h=t%24;return(d?d+' يوم':'')+(d&&h?' و':'')+(h?h+' ساعة':'')||'أقل من ساعة'};
+const gBan=h=>{if(h['x-role']!='customer')return null;const c=h['x-id']&&db.customers[h['x-id']],n=Date.now(),d=cdev(h['x-dev']);let u=c&&c.ban&&c.ban.until>n?c.ban.until:0;if(!u&&d&&db.banDev&&db.banDev[d]>n)u=db.banDev[d];
+ return u?{c:'ban',e:'تم إيقاف حسابك مؤقتًا بسبب تكرار إلغاء الطلبات بعد الموافقة عليها. يتبقى على انتهاء الإيقاف: '+abTxt(u)+'. للاستفسار تواصل مع الدعم.',until:u}:null};
+const guard=h=>{const r=h['x-role'];return(r=='customer'||r=='driver')?(gTime(h)||gVpn(h)||gBan(h)):null};
 const parseUA=ua=>{ua=String(ua||'');let os='',nm='',m;
  if(m=ua.match(/Android ([\d.]+)/)){os='Android '+m[1];const d=ua.match(/Android [\d.]+;\s*([^;)]+?)(?:\s+Build|;|\))/);nm=d?d[1].trim():''}
  else if(m=ua.match(/iPhone OS ([\d_]+)/)){os='iOS '+m[1].replace(/_/g,'.');nm='iPhone'}
@@ -119,7 +128,7 @@ const E0={};
 function custParts(i,I){const orders=I.co[i]||E0,rides=I.cr[i]||E0;
  const ids=new Set(),live=new Set();for(const k in orders){const o=orders[k],d=o.did;if(d&&db.drivers[d]){ids.add(d);if(o.st>=0&&o.st<4)live.add(d)}}for(const k in rides){const o=rides[k],d=o.did;if(d&&db.drivers[d]){ids.add(d);if(o.st>=0&&o.st<4)live.add(d)}}
  const drivers={};for(const d of ids){const x=db.drivers[d];drivers[d]={id:d,n:x.n,ph:x.ph,car:x.car,plate:x.plate,color:x.color,img:x.img,loc:live.has(d)?x.loc:undefined}}
- return{orders,rides,tickets:I.ct[i]||E0,apps:I.ca[i]||E0,cardorders:clean(I.cc[i]||E0,['cost','by']),me:{bal:(db.customers[i]||{}).bal||0},ctop:I.cp[i]||E0,ctx:I.cx[i]||E0,drivers}}
+ return{orders,rides,tickets:I.ct[i]||E0,apps:I.ca[i]||E0,cardorders:clean(I.cc[i]||E0,['cost','by']),me:{bal:(db.customers[i]||{}).bal||0,ab:abInfo(i)},ctop:I.cp[i]||E0,ctx:I.cx[i]||E0,drivers}}
 const rsOf=I=>frag('rs',()=>clean(db.rests,['pin']));
 function view(h){const r=h['x-role'],i=h['x-id'],I=ix();
  if(r=='admin')return{...db,codes:codeSum()};
@@ -203,7 +212,7 @@ function set(h,b){const{k,id}=b;let v=b.v;const r=h['x-role'],i=h['x-id'];
  const old=db[k]&&db[k][id],mn=db.cfg.minBal;
  if(k=='cdev'){if(r!='admin'||!v)return 0;const c=db.customers[id];if(!c)return 0;c.devs=c.devs||{};const x=c.devs[S(v.dev,64)];
   if(v.a=='reset'){Object.values(c.devs).forEach(y=>{if(!y.st)y.st=2});AU.rev[id]=Date.now();saveA();audit(h,'cdev-reset',id);return 1}
-  if(!x)return 0;if(v.a=='rm'){x.st=2;audit(h,'cdev-rm',id);return 1}if(v.a=='block'){x.st=1;audit(h,'cdev-block',id);return 1}if(v.a=='unblock'){x.st=2;audit(h,'cdev-unblock',id);return 1}return 0}
+  if(v.a=='unban'){delete c.ban;c.ab=[];if(db.banDev)for(const d of Object.keys(c.devs))delete db.banDev[d];audit(h,'ab-unban',id);CV++;return 1}if(!x)return 0;if(v.a=='rm'){x.st=2;audit(h,'cdev-rm',id);return 1}if(v.a=='block'){x.st=1;audit(h,'cdev-block',id);return 1}if(v.a=='unblock'){x.st=2;audit(h,'cdev-unblock',id);return 1}return 0}
  if(k=='wallet'){const d=db.drivers[id],a=Math.round(+(v&&v.amt));if(!d||!a)return 0;credit(id,a,String((v&&v.why)||'شحن من لوحة التحكم').slice(0,100));audit(h,'wallet',id,a);return 1}
  if(k=='cwallet'){const a=Math.round(+(v&&v.amt));if(r!='admin'||!db.customers[id]||!a)return 0;audit(h,'cwallet',id,a);return ccredit(id,a,String(v.why||'شحن من لوحة التحكم').slice(0,100))}
  if(k=='incw'){if(r!='admin'||old||!v)return 0;const n=(db.cfg.inc||[]).find(x=>x.id==v.iid),d=db.drivers[v.did];if(!n||!d||id!=n.id+'_'+d.id||tripsOf(d.id,n)<n.trips)return 0;credit(d.id,+n.amt,'حافز: '+String(n.n).slice(0,60));db.incw[id]={id,iid:n.id,did:d.id,n:n.n,amt:+n.amt,trips:n.trips,at:Date.now()};return 1}
@@ -265,13 +274,14 @@ function set(h,b){const{k,id}=b;let v=b.v;const r=h['x-role'],i=h['x-id'];
  if(r=='rest'&&(k=='rests'?id!=i:!old||old.rid!=i||!v))return 0;
  if(r=='driver'&&k!='topups'&&(k=='drivers'?id!=i:!old||(old.did&&old.did!=i)||(v&&v.did&&v.did!=i)))return 0;
  if(r=='driver'&&k=='drivers'){if(!v)return 0;const n={};if('on' in v)n.on=v.on&&(db.drivers[i].bal||0)>mn?1:0;if(v.loc){const a=+v.loc.lat,g=+v.loc.lng;if(!(Math.abs(a)<=90&&Math.abs(g)<=180))return 0;n.loc={lat:a,lng:g}}['car','plate','color'].forEach(f=>{if(f in v)n[f]=String(v[f]).trim().slice(0,60)});if(/^\/u\/[a-f0-9]{32}\.\w+$/.test(String(v.img||'')))n.img=v.img;v=n}
- if(r=='driver'&&(k=='orders'||k=='rides')){if(!v)return 0;const n={};if('did' in v){if(v.did&&(db.drivers[i].bal||0)<=mn)return 0;n.did=v.did}if('rej' in v&&old.did==i&&!v.did){n.rej=[...new Set([...(old.rej||[]),i])];const fee=Math.round(+db.cfg.rejFee)||0;if(k=='orders'&&old.st<3&&fee>0)credit(i,-fee,'غرامة رفض طلب #'+id)}if('st' in v){if((old.did!=i&&n.did!=i)||!((v.st==old.st+1&&(k=='rides'||old.st>=2))||(k=='rides'&&old.st==1&&v.st==0)))return 0;if(v.st==4&&old.t3&&Date.now()-old.t3<(k=='rides'?45e3:3e4))return 0;n.st=v.st;n['t'+v.st]=Date.now()}v=n}
- if(k=='cfg'){v={...(v||{})};['appPct','restPct','taxiPct'].forEach(f=>{if(f in v)v[f]=Math.min(100,Math.max(0,+v[f]||0))});delete v.mig5;if('req2fa' in v)v.req2fa=v.req2fa?1:0;if('theme' in v)v.theme=['auto','royal','night','ocean','ember','carbon','emerald','sunset','rose'].includes(v.theme)?v.theme:'auto';if('rejFee' in v)v.rejFee=Math.min(1e6,Math.max(0,Math.round(+v.rejFee)||0));if('auto' in v)v.auto=v.auto?1:0;if('maxKm' in v)v.maxKm=Math.min(200,Math.max(1,+v.maxKm||10));if('maxDev' in v)v.maxDev=Math.min(20,Math.max(1,Math.round(+v.maxDev)||3));['vpnBlock','timeGuard'].forEach(f=>{if(f in v)v[f]=v[f]?1:0});if('timeTol' in v)v.timeTol=Math.min(60,Math.max(1,Math.round(+v.timeTol)||3));db.cfg={...db.cfg,...v};audit(h,'cfg',id);return 1}
+ if(r=='driver'&&(k=='orders'||k=='rides')){if(!v)return 0;const n={};if('did' in v){if(v.did&&(db.drivers[i].bal||0)<=mn)return 0;n.did=v.did;if(v.did)n.aat=Date.now()}if('rej' in v&&old.did==i&&!v.did){n.rej=[...new Set([...(old.rej||[]),i])];const fee=Math.round(+db.cfg.rejFee)||0;if(k=='orders'&&old.st<3&&fee>0)credit(i,-fee,'غرامة رفض طلب #'+id)}if('st' in v){if((old.did!=i&&n.did!=i)||!((v.st==old.st+1&&(k=='rides'||old.st>=2))||(k=='rides'&&old.st==1&&v.st==0)))return 0;if(v.st==4&&old.t3&&Date.now()-old.t3<(k=='rides'?45e3:3e4))return 0;n.st=v.st;n['t'+v.st]=Date.now()}v=n}
+ if(k=='cfg'){v={...(v||{})};['appPct','restPct','taxiPct'].forEach(f=>{if(f in v)v[f]=Math.min(100,Math.max(0,+v[f]||0))});delete v.mig5;if('req2fa' in v)v.req2fa=v.req2fa?1:0;if('theme' in v)v.theme=['auto','royal','night','ocean','ember','carbon','emerald','sunset','rose'].includes(v.theme)?v.theme:'auto';if('rejFee' in v)v.rejFee=Math.min(1e6,Math.max(0,Math.round(+v.rejFee)||0));if('auto' in v)v.auto=v.auto?1:0;if('maxKm' in v)v.maxKm=Math.min(200,Math.max(1,+v.maxKm||10));if('maxDev' in v)v.maxDev=Math.min(20,Math.max(1,Math.round(+v.maxDev)||3));['vpnBlock','timeGuard'].forEach(f=>{if(f in v)v[f]=v[f]?1:0});if('timeTol' in v)v.timeTol=Math.min(60,Math.max(1,Math.round(+v.timeTol)||3));if('abOn' in v)v.abOn=v.abOn?1:0;if('abWarn' in v)v.abWarn=Math.min(50,Math.max(1,Math.round(+v.abWarn)||4));if('abBan' in v)v.abBan=Math.min(100,Math.max(1,Math.round(+v.abBan)||6));if('abDays' in v)v.abDays=Math.min(365,Math.max(1,Math.round(+v.abDays)||3));if('abWin' in v)v.abWin=Math.min(365,Math.max(0,Math.round(+v.abWin)||0));if('abGrace' in v)v.abGrace=Math.min(600,Math.max(0,Math.round(+v.abGrace)||0));db.cfg={...db.cfg,...v};audit(h,'cfg',id);return 1}
   if(k=='vars'){if(r!='admin'||!/^[A-Za-z][A-Za-z0-9_]{0,39}$/.test(String(id)))return 0;if(v!=null){const t=['s','n','b'].includes(v.t)?v.t:((old&&old.t)||'s');let x=v.v!==undefined?v.v:(old&&old.v);x=t=='n'?(Number.isFinite(+x)?+x:0):t=='b'?(x&&x!=='0'&&x!=='false'?1:0):String(x==null?'':x).slice(0,500);if(!old&&Object.keys(db.vars).length>=200)return 0;v={v:x,t,pub:('pub' in v?(v.pub?1:0):(old?old.pub:0)),d:String('d' in v?v.d:(old&&old.d)||'').slice(0,120),at:Date.now()}}audit(h,'var',id)}
  if(k=='drivers'&&v&&v.loc)v.locAt=Date.now();
  if(k=='cardorders'&&old&&old.st==0&&v&&v.st>0&&r!='customer'){const cc=db.cards[old.card];
   if(cc&&cc.auto&&!old.code&&!String(v.code||'').trim()){if(!stockOf(cc.id))return 0;const o2={};deliver(o2,id,old.cid,cc);v={...v,...o2,by:r}}
   else{v={...v,dat:Date.now(),by:r};if(cc&&cc.cost!=null&&cc.cost!=='')v.cost=+cc.cost}}
+ if(r=='customer'&&(k=='rides'||k=='orders')&&old&&v&&v.st==-1&&old.st>=1&&old.st<4){const gr=abK().gr*1e3,ta=+old.aat||+old.acc||0;if(!(gr&&ta&&Date.now()-ta<gr))abNew(i)}
  if(v==null)delete db[k][id];else db[k][id]={...old,...v,id};
  {const nw=db[k]&&db[k][id];if(nw&&nw.paid&&!nw.refd&&nw.st<0&&['orders','rides','cardorders'].includes(k)){nw.refd=1;ccredit(nw.cid,k=='orders'?nw.tot:k=='rides'?nw.fare:nw.p,'استرجاع '+id)}}
  if((k=='orders'||k=='rides')&&v&&db[k][id].st==4&&!db[k][id].chg&&db[k][id].did)charge(k,db[k][id]);
@@ -287,47 +297,70 @@ function menuOp(h,b){const r=h['x-role'],rid=r=='rest'?h['x-id']:r=='admin'?Stri
    if(o){o.p=p;if(d)o.d=d;upd++}else{const it={id:'i'+Date.now().toString(36)+cr.randomBytes(3).toString('hex'),n,p,d,cat,f:'',t:'',off:0,pu:0,img:''};cur.push(it);idx.set(k,it);add++}}
   const cl=cleanItems(cur);if(!cl)return null;R.items=cl;return{ok:1,add,upd,skip,total:cl.length}}
  return null}
-/* ===== استيراد المنيو بالذكاء الاصطناعي (صور / PDF / نص) ===== */
-const AIK=process.env.ANTHROPIC_API_KEY||'',AIM=process.env.AI_MODEL||'claude-sonnet-5-5',AIU=process.env.ANTHROPIC_API_URL||'https://api.anthropic.com/v1/messages',AIH={};
+/* ===== استيراد المنيو بالذكاء الاصطناعي (صور / PDF / نص) — Google Gemini ===== */
+const AIK=process.env.GEMINI_API_KEY||'',AIU='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',AIH={};
 const AIE=(code,m)=>Object.assign(new Error(m),{code});
-const AI_TOOL={name:'save_menu',description:'احفظ الأقسام والأصناف المستخرجة من المنيو كما هي بالضبط.',input_schema:{type:'object',properties:{
- prices_in_thousands:{type:'boolean',description:'true فقط إذا كانت الأسعار في المنيو مكتوبة بالآلاف (مثل 5 أو 7.5 أو 12 وتعني 5000 و7500 و12000 دينار)'},
- categories:{type:'array',items:{type:'object',properties:{name:{type:'string',description:'اسم القسم كما في المنيو'},items:{type:'array',items:{type:'object',properties:{
-  n:{type:'string',description:'اسم الصنف كما هو مكتوب'},p:{type:'number',description:'السعر رقمًا كما هو مكتوب في المنيو (بدون عملة). إن وُجدت أحجام متعددة فأنشئ صنفًا لكل حجم باسم مثل «بيتزا - كبير»'},d:{type:'string',description:'الوصف/المكونات إن وُجدت وإلا نص فارغ'}},required:['n','p']}}},required:['name','items']}},
- notes:{type:'string',description:'ملاحظات قصيرة عن أي جزء غير واضح أو لم يُقرأ'}},required:['categories']}};
+const AI_MAXB=15*1024*1024; /* مجموع حجم الملفات المرفوعة بعد فك base64 */
+const AI_MIMES={'image/jpeg':1,'image/png':1,'image/webp':1,'image/heic':1,'image/heif':1,'application/pdf':1};
+const aiMagic=(mt,d)=>{let h;try{h=Buffer.from(d.slice(0,64),'base64')}catch(e){return false}
+ if(mt=='image/jpeg')return h[0]==0xFF&&h[1]==0xD8;if(mt=='image/png')return h.slice(1,4).toString()=='PNG';
+ if(mt=='image/webp')return h.slice(0,4).toString()=='RIFF'&&h.slice(8,12).toString()=='WEBP';
+ if(mt=='application/pdf')return h.slice(0,4).toString()=='%PDF';return h.slice(4,8).toString()=='ftyp'};
+const aiEn=s=>String(s).replace(/[٠-٩]/g,c=>c.charCodeAt(0)-0x660).replace(/[۰-۹]/g,c=>c.charCodeAt(0)-0x6F0).replace(/٫/g,'.').replace(/٬/g,',');
+/* السعر: أرقام عربية→إنجليزية، وتجاهل «د.ع» و«ألف» وأي رموز */
+function aiPrice(v){if(typeof v=='number')return Number.isFinite(v)?v:NaN;
+ const m=aiEn(v).replace(/\s+/g,'').match(/\d[\d.,]*/);if(!m)return NaN;let t=m[0].replace(/[.,]+$/,'');
+ if(/^\d{1,3}([.,]\d{3})+$/.test(t))t=t.replace(/[.,]/g,'');else t=t.replace(/,/g,'.');
+ if((t.match(/\./g)||[]).length>1)t=t.replace(/\./g,'');return parseFloat(t)}
+/* استخراج JSON من رد النموذج، مع إصلاح المصفوفة المقطوعة (عند تجاوز الحد الأقصى للإخراج) */
+function aiJSON(t){t=String(t||'').replace(/^\uFEFF/,'').replace(/^```(?:json)?\s*/i,'').replace(/```\s*$/,'').trim();
+ const tryP=x=>{try{return JSON.parse(x)}catch(e){return undefined}};let v=tryP(t);if(v!==undefined)return{v,fixed:0};
+ const i=t.indexOf('[');if(i<0)return null;let c=t.slice(i);
+ for(let n=0;n<400;n++){const k=c.lastIndexOf('}');if(k<0)break;c=c.slice(0,k+1);v=tryP(c+']');if(v!==undefined)return{v,fixed:1};c=c.slice(0,k)}
+ return null}
 async function menuAI(rid,b){
- if(!AIK)throw AIE(501,'ميزة الذكاء الاصطناعي غير مفعّلة. أضف متغير البيئة ANTHROPIC_API_KEY في السيرفر.');
- const now=Date.now(),a=(AIH[rid]||[]).filter(t=>now-t<36e5);if(a.length>=15)throw AIE(429,'تجاوزت الحد (15 تحليلًا في الساعة). حاول لاحقًا.');a.push(now);AIH[rid]=a;
- const C=[],OK={'image/jpeg':1,'image/png':1,'image/webp':1,'image/gif':1};
- const files=Array.isArray(b.files)?b.files.slice(0,8):[];
- for(const f of files){const mt=String(f&&f.mime||''),d=String(f&&f.data||'').replace(/^data:[^,]*,/,'');if(!d||!/^[A-Za-z0-9+/=\s]+$/.test(d.slice(0,2000)))throw AIE(400,'ملف غير صالح');
-  if(mt=='application/pdf')C.push({type:'document',source:{type:'base64',media_type:mt,data:d}});else if(OK[mt])C.push({type:'image',source:{type:'base64',media_type:mt,data:d}});else throw AIE(415,'نوع الملف غير مدعوم (صورة أو PDF فقط)')}
- const tx=String(b.text||'').slice(0,60000).trim();if(tx)C.push({type:'text',text:'نص المنيو:\n'+tx});
- if(!C.length)throw AIE(400,'لا يوجد محتوى لتحليله');
+ if(!AIK)throw AIE(501,'ميزة الذكاء الاصطناعي غير مفعّلة. أضف متغير البيئة GEMINI_API_KEY في السيرفر.');
+ const now=Date.now(),a=(AIH[rid]||[]).filter(t=>now-t<36e5);if(a.length>=15)throw AIE(429,'تجاوزت الحد (15 تحليلًا في الساعة). حاول لاحقًا.');
+ const P=[],files=Array.isArray(b.files)?b.files.slice(0,8):[];let tot=0;
+ for(const f of files){const mt=String(f&&f.mime||'').toLowerCase(),d=String(f&&f.data||'').replace(/^data:[^,]*,/,'').replace(/\s+/g,'');
+  if(!d||!/^[A-Za-z0-9+/]+={0,2}$/.test(d))throw AIE(400,'ملف غير صالح');
+  if(!AI_MIMES[mt])throw AIE(415,'نوع الملف غير مدعوم (صور JPG/PNG/WEBP أو PDF فقط)');
+  if(!aiMagic(mt,d))throw AIE(415,'محتوى الملف لا يطابق نوعه. استخدم صورة أو PDF سليمًا');
+  tot+=Math.floor(d.length*3/4);if(tot>AI_MAXB)throw AIE(413,'الملفات كبيرة جدًا (الحد الأقصى 15MB مجموعًا)، قلّل عدد الصور أو حجمها');
+  P.push({inline_data:{mime_type:mt,data:d}})}
+ const tx=String(b.text||'').slice(0,60000).trim();
+ if(!P.length&&!tx)throw AIE(400,'لا يوجد محتوى لتحليله');
+ if(tx)P.push({text:'نص المنيو:\n'+tx});
  const ex=[...new Set((db.rests[rid].items||[]).map(i=>String(i.cat||'').trim()).filter(Boolean))].slice(0,60);
- C.push({type:'text',text:'استخرج كل الأقسام والأصناف من هذا المنيو واستدعِ الأداة save_menu.'});
- const sys=`أنت خبير في قراءة قوائم المطاعم (منيو) العربية والإنجليزية والكردية، وتستخرج منها بيانات منظمة لنظام طلب طعام في العراق.
-القواعد:
-- استخرج كل صنف ظاهر دون إسقاط أي صنف، ولا تخترع أصنافًا أو أسعارًا غير موجودة.
-- انسخ أسماء الأصناف والأقسام بلغتها الأصلية كما هي (صحّح الأخطاء الإملائية الواضحة الناتجة عن جودة الصورة فقط).
-- كل صنف يتبع القسم المكتوب تحته/بجانبه في المنيو. إن لم تُوجد أقسام فاقترح قسمًا منطقيًا قصيرًا (مثل: برغر، بيتزا، مشروبات، حلويات، مقبلات).
-- إن كان القسم الظاهر في المنيو يطابق قسمًا من الأقسام الحالية التالية بالمعنى فاستخدم الاسم الحالي حرفيًا لتجنب التكرار: ${ex.length?ex.join(' | '):'(لا توجد أقسام حالية)'}.
-- السعر رقم فقط كما كُتب. حوّل الأرقام الهندية (٠-٩) إلى إنجليزية. إن كُتبت الأسعار بالآلاف (مثل 5 أو 7.5 أو 12) فاجعل prices_in_thousands=true وأبقِ الأرقام كما هي، وإلا اجعلها false.
-- الأحجام/الخيارات ذات الأسعار المختلفة (صغير/وسط/كبير…) صنف مستقل لكل حجم باسم «الاسم - الحجم».
-- إن ظهر صنف مرتين بنفس القسم فاذكره مرة واحدة.
-- الوصف: المكونات أو الملاحظة المكتوبة تحت الصنف فقط، وإلا فارغ.
-- تجاهل أرقام الهواتف والعناوين وساعات العمل والإعلانات.
-- إن كان صنف بلا سعر واضح فتجاهله واذكره في notes.`;
- const r=await fetch(AIU,{method:'POST',headers:{'content-type':'application/json','x-api-key':AIK,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:AIM,max_tokens:16000,system:sys,tools:[AI_TOOL],tool_choice:{type:'tool',name:'save_menu'},messages:[{role:'user',content:C}]}),signal:AbortSignal.timeout(120000)}).catch(()=>{throw AIE(502,'تعذر الاتصال بخدمة الذكاء الاصطناعي')});
+ P.push({text:'استخرج كل أصناف المنيو من هذه الصور/الملف/النص (عربي أو إنجليزي) وأعدها JSON فقط: مصفوفة عناصر، كل عنصر فيه: category, name, price (رقم فقط), description. لا تخترع أصنافاً غير موجودة.'
+  +'\nإن ظهرت أحجام بأسعار مختلفة فاجعل لكل حجم عنصراً باسم «الاسم - الحجم». اترك description نصاً فارغاً إن لم يوجد وصف. تجاهل أرقام الهواتف والعناوين وساعات العمل.'
+  +(ex.length?'\nإن طابق قسمٌ في المنيو قسماً من الأقسام الحالية بالمعنى فاستخدم الاسم الحالي حرفياً: '+ex.join(' | '):'')});
+ a.push(now);AIH[rid]=a;
+ const r=await fetch(AIU,{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':AIK},body:JSON.stringify({contents:[{role:'user',parts:P}],generationConfig:{responseMimeType:'application/json',temperature:0.1}}),signal:AbortSignal.timeout(120000)}).catch(e=>{throw AIE(502,e&&e.name=='TimeoutError'?'انتهت مهلة خدمة الذكاء الاصطناعي، جرّب صورة أصغر أو أقل عددًا':'تعذر الاتصال بخدمة الذكاء الاصطناعي')});
  const j=await r.json().catch(()=>({}));
- if(!r.ok){console.error('menu-ai',r.status,JSON.stringify(j).slice(0,300));throw AIE(r.status==401||r.status==403?502:r.status==429?429:502,r.status==429?'الخدمة مشغولة، أعد المحاولة بعد قليل':r.status==401||r.status==403?'مفتاح الذكاء الاصطناعي غير صالح':'تعذر تحليل المنيو، جرّب صورة أوضح')}
- const t=(j.content||[]).find(x=>x.type=='tool_use'&&x.name=='save_menu');if(!t||!t.input)throw AIE(502,'لم يتم العثور على أصناف في الملف');
- const items=[],seen=new Set();
- for(const c of Array.isArray(t.input.categories)?t.input.categories:[])for(const x of Array.isArray(c&&c.items)?c.items:[]){
-  const n=String(x&&x.n||'').replace(/\s+/g,' ').trim().slice(0,80),p=+x.p,cat=String(c.name||'').replace(/\s+/g,' ').trim().slice(0,60),d=String(x&&x.d||'').trim().slice(0,500);
+ if(!r.ok){const em=String(j&&j.error&&j.error.message||'');console.error('menu-ai',r.status,em.slice(0,300));
+  if(r.status==429)throw AIE(429,'انتهت حصة الذكاء الاصطناعي أو الخدمة مشغولة. أعد المحاولة بعد قليل (أو تحقق من حصة مفتاح Gemini).');
+  if(r.status==413||/too large|exceeds the maximum|request payload size/i.test(em))throw AIE(413,'الملفات كبيرة جدًا، قلّل عدد الصور أو حجمها');
+  if(r.status==401||r.status==403||/api key/i.test(em))throw AIE(502,'مفتاح GEMINI_API_KEY غير صالح أو غير مصرّح له');
+  if(r.status==400)throw AIE(502,'تعذر تحليل الملف، جرّب صورة أوضح أو PDF أصغر');
+  throw AIE(502,'خدمة الذكاء الاصطناعي غير متاحة حاليًا، حاول بعد قليل')}
+ if(j.promptFeedback&&j.promptFeedback.blockReason)throw AIE(422,'تم رفض تحليل هذا الملف من خدمة الذكاء الاصطناعي، جرّب صورة أخرى');
+ const cand=(j.candidates||[])[0]||{},txt=((cand.content&&cand.content.parts)||[]).map(x=>x&&x.text||'').join('');
+ const trunc=cand.finishReason=='MAX_TOKENS'?1:0;
+ if(!txt.trim())throw AIE(502,'لم يتم العثور على أصناف في الملف');
+ const pj=aiJSON(txt);if(!pj)throw AIE(502,'تعذّر فهم رد الذكاء الاصطناعي (JSON غير صالح). أعد المحاولة أو جرّب صورة أوضح.');
+ let arr=pj.v;if(arr&&!Array.isArray(arr)&&typeof arr=='object')arr=arr.items||arr.menu||arr.data||Object.values(arr).find(Array.isArray);
+ if(!Array.isArray(arr))throw AIE(502,'تعذّر فهم رد الذكاء الاصطناعي (JSON غير صالح). أعد المحاولة.');
+ let items=[];const seen=new Set();
+ for(const x of arr){if(!x||typeof x!='object')continue;
+  const n=String(x.name||x.n||'').replace(/\s+/g,' ').trim().slice(0,80),p=aiPrice(x.price!=null?x.price:x.p),cat=String(x.category||x.cat||'').replace(/\s+/g,' ').trim().slice(0,60),d=String(x.description||x.d||'').trim().slice(0,500);
   if(!n||!Number.isFinite(p)||p<0)continue;const k=nk(cat)+'|'+nk(n);if(seen.has(k))continue;seen.add(k);items.push({cat,n,p,d})}
  if(!items.length)throw AIE(422,'لم يتم العثور على أصناف بأسعار في الملف');
- return{items:items.slice(0,1000),k:t.input.prices_in_thousands===true?1:0,notes:String(t.input.notes||'').slice(0,400),truncated:j.stop_reason=='max_tokens'?1:0}}
+ items=items.slice(0,1000);
+ /* الأسعار المكتوبة بالآلاف (5 ← 5000): نفس منطق الواجهة؛ الكسور تُضرب هنا لأن الواجهة تقرّب الأرقام */
+ let k=0;if(items.every(i=>i.p<1000)&&items.some(i=>i.p>0)){if(items.every(i=>Number.isInteger(i.p)))k=1;else items.forEach(i=>{i.p=Math.round(i.p*1000)})}
+ items.forEach(i=>{if(!k)i.p=Math.round(i.p)});
+ return{items,k,notes:pj.fixed?'الرد كان مقطوعًا فاستُخرج الجزء المكتمل فقط.':'',truncated:(trunc||pj.fixed)?1:0}}
 const rad=x=>x*Math.PI/180,hv=(a,b)=>{const dl=rad(b.lat-a.lat),dg=rad(b.lng-a.lng),x=Math.sin(dl/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dg/2)**2;return 12742*Math.asin(Math.sqrt(x))};
 let DC=0;function dispatch(){if(db.cfg.auto===0)return;const mx=db.cfg.maxKm||10,now=Date.now(),I=ix();
  const q=Object.values(I.pend).filter(([o,k])=>k=='orders'?(o.st==2||(o.st==1&&o.pt&&o.pt-now<=6e5))&&!o.did:o.st==0&&!o.did).sort((a,b)=>a[0].at-b[0].at);
@@ -349,7 +382,7 @@ const T={'.html':'text/html;charset=utf-8','.js':'text/javascript;charset=utf-8'
 const LIGHT=new Set(['orders','rides','tickets','apps','cardorders','ctop','topups','wd','incw','drivers','wallet','cwallet','cdev']),IXV_=!!process.env.IX_VERIFY;
 const SC=new Map();
 function serveStatic(q,s,f,SH){const ae=String(q.headers['accept-encoding']||''),now=Date.now();let e=SC.get(f);
- const send=()=>{const ext=path.extname(f),tx=T[ext],enc=tx&&e.br&&/\bbr\b/.test(ae)?'br':tx&&e.gz&&/\bgzip\b/.test(ae)?'gzip':'',h={...SH,'Content-Type':tx||'application/octet-stream','ETag':e.etag,'Cache-Control':ext=='.html'?'no-cache':'public,max-age=60,must-revalidate','Vary':'Accept-Encoding'};
+ const send=()=>{const ext=path.extname(f),tx=T[ext],enc=tx&&e.br&&/\bbr\b/.test(ae)?'br':tx&&e.gz&&/\bgzip\b/.test(ae)?'gzip':'',h={...SH,'Content-Type':tx||({'.jpg':'image/jpeg','.png':'image/png','.webp':'image/webp'})[ext]||'application/octet-stream','ETag':e.etag,'Cache-Control':ext=='.html'?'no-cache':'public,max-age=60,must-revalidate','Vary':'Accept-Encoding'};
   if(inm(q,e.etag)){s.writeHead(304,h);return s.end()}const b=enc=='br'?e.br:enc=='gzip'?e.gz:e.buf;if(enc)h['Content-Encoding']=enc;h['Content-Length']=b.length;s.writeHead(200,h);s.end(q.method=='HEAD'?undefined:b)};
  if(e&&now-e.t<5e3)return send();
  fs.stat(f,(er,st)=>{if(er||!st.isFile()){s.writeHead(404);return s.end('404')}if(e&&e.m===st.mtimeMs){e.t=now;return send()}

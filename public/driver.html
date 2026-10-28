@@ -34,6 +34,17 @@ navigator.geolocation&&navigator.geolocation.watchPosition(p=>{pos={lat:p.coords
 const me=()=>DB.drivers[AUTH.id]||{},MIN=()=>DB.cfg.minWd||15000,tod=t=>new Date(t).toDateString()==new Date().toDateString();
 const nv=p=>p?`<a class="btn" style="flex:1" target="_blank" href="${nav(p)}">🧭 ملاحة</a>`:'';
 const rej=(k,id)=>{const o=(k=='orders'?DB.orders:DB.rides)[id];confirm('رفض الطلب؟ سيُحوَّل لأقرب كابتن آخر.'+(k=='orders'&&+DB.cfg.rejFee>0?'\n⚠️ ستُخصم غرامة رفض '+fmt(+DB.cfg.rejFee)+' من محفظتك.':''))&&act(k,id,{did:null,rej:[...(o.rej||[]),AUTH.id],...(k=='rides'?{st:0}:{})})};
+const pn=p=>{let d=String(p||'').replace(/\D/g,'').replace(/^00/,'');if(d.startsWith('0'))d='964'+d.slice(1);return d};
+/* قائمة التواصل مع الزبون: شريحة / رسالة SMS / واتساب / تيليجرام / فايبر */
+function callC(ph){const n=pn(ph),raw=String(ph||'').replace(/[^\d+]/g,'');if(!n)return alert('لا يوجد رقم هاتف للزبون');
+ const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;z-index:99999;background:#0007;display:flex;align-items:flex-end;justify-content:center';
+ const go=(u,w)=>{o.remove();if(w)window.open(u,'_blank');else location.href=u};
+ const b=(t,u,w,bg)=>{const e=document.createElement('button');e.textContent=t;e.style.cssText='display:block;width:100%;padding:14px;margin-top:8px;border:0;border-radius:14px;background:'+(bg||'#f2f3f7')+';color:'+(bg?'#fff':'#111')+';font:700 16px inherit;font-family:inherit';e.onclick=()=>go(u,w);return e};
+ const c=document.createElement('div');c.style.cssText='background:#fff;color:#111;width:100%;max-width:560px;border-radius:24px 24px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));direction:rtl';
+ c.innerHTML='<div style="text-align:center;font-weight:800;font-size:17px;margin-bottom:4px">التواصل مع الزبون</div><div dir="ltr" style="text-align:center;color:#666;font-size:14px">'+esc(String(ph))+'</div>';
+ const x=document.createElement('button');x.textContent='إغلاق';x.style.cssText='display:block;width:100%;padding:14px;margin-top:8px;border:0;border-radius:14px;background:transparent;color:#666;font:700 16px inherit;font-family:inherit';x.onclick=()=>o.remove();
+ c.append(b('📞 اتصال عبر الشريحة (SIM)','tel:'+raw),b('✉️ رسالة نصية SMS','sms:'+raw),b('🟢 واتساب — محادثة أو مكالمة صوتية',wa(ph,'مرحباً، أنا كابتن تكسي المتميز'),1,'#25d366'),b('✈️ تيليجرام — مكالمة أو رسائل','https://t.me/+'+n,1),b('💜 فايبر — مكالمة أو رسائل','viber://chat?number=%2B'+n),x);
+ o.onclick=e=>{if(e.target==o)o.remove()};o.appendChild(c);document.body.appendChild(o)}
 const wa=(p,t)=>'https://wa.me/'+String(p||'').replace(/\D/g,'').replace(/^0/,'964')+'?text='+encodeURIComponent(t||'');
 /* ---------- الطلبات المتاحة والنشطة ---------- */
 function jobs(){const m=me(),ty=m.type||'both',O=Object.values(DB.orders),R=Object.values(DB.rides),id=AUTH.id;
@@ -56,7 +67,7 @@ function active(j){const o=j.o,rd=j.k=='rides',st=o.st,tg=rd?(st<3?o.from:o.to):
  <div class="row sp"><span class="chip">${st<3||!rd?'📍 للنقطة':'🏁 للوجهة'}: ${e?e.min:'-'} د • ${e?e.km.toFixed(1):'-'} كم</span>${rd?`<span class="mu">الرحلة ${o.km||0} كم</span>`:''}</div>
  <div class="rt"><span class="ln"></span><p><i class="d1"></i><span class="tx">${esc(rd?(o.fa||'نقطة الانطلاق'):o.rn)}</span></p><p><i class="d2"></i><span class="tx">${esc(rd?(o.ta||'الوجهة'):(o.note||'موقع الزبون'))}</span></p></div>
  ${!rd?`<div class="mu">${o.its.map(i=>i.q+' × '+esc(i.n)).join('، ')}<br>${o.paid?'<b class="on">✅ مدفوع بالمحفظة — لا تستلم نقدًا</b>':'المطلوب من الزبون: <b>'+fmt(o.tot)+'</b>'}</div>`:''}
- <div class="row" style="margin:8px 0"><div class="g"><b>${esc(o.cn||'')}</b></div><a class="btn l" style="min-width:46px" href="tel:${esc(o.cp)}">📞</a><a class="btn l" target="_blank" href="${wa(o.cp,'مرحباً، أنا كابتن تكسي المتميز')}">💬</a></div>
+ <div class="row" style="margin:8px 0"><div class="g"><b>${esc(o.cn||'')}</b>${o.cp?`<div class="mu" dir="ltr" style="text-align:right">${esc(o.cp)}</div>`:''}</div>${o.cp?`<button class="l" style="min-width:46px" data-p="${esc(o.cp)}" onclick="callC(this.dataset.p)">📞 اتصال</button><a class="btn" target="_blank" style="min-width:46px;background:#25d366;color:#fff;border-color:#25d366" href="${wa(o.cp,'مرحباً، أنا كابتن تكسي المتميز')}">واتساب</a>`:''}</div>
  <div class="bt">${nv(tg)}${tg?`<button class="l" onclick="shareDest(${tg.lat},${tg.lng},'${rd&&st>=3?'نقطة الوصول':'نقطة الاستلام'}')">📤 مشاركة الوجهة</button>`:''}${(rd&&st==1)||(!rd&&st<3)?`<button class="l" onclick="rej('${j.k}','${o.id}')">رفض</button>`:''}</div>
  ${!rd&&st==1?`<button class="big" disabled>المطعم يجهّز الطلب… توجّه إليه</button>`:`<button class="big" onclick="act('${j.k}','${o.id}',{st:${st+1}})">${rd?RST[st]:(st==2?'استلمت من المطعم':'تم التسليم')}</button>`}`}
 /* ---------- المحفظة والسحب ---------- */
