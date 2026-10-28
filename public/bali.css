@@ -161,3 +161,16 @@ nav button.a .prb{box-shadow:0 0 0 2px color-mix(in srgb,var(--pr) 35%,transpare
 .rdo{width:26px;height:26px;flex:none;border-radius:50%;border:2.5px solid var(--mu);display:grid;place-items:center}.rdo.on{border-color:var(--pr)}.rdo.on::after{content:'';width:14px;height:14px;border-radius:50%;background:var(--pr)}
 .cxf{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:14px}.cxn{background:none!important;border:0;box-shadow:none;color:var(--tx);font-size:18px;min-height:52px;padding:0 24px;width:auto}
 .cxd{flex:0 0 46%;background:var(--cd)!important;background-image:none!important;border:2px solid #e11d1d;color:#e11d1d;border-radius:14px;min-height:56px;font-size:18px;box-shadow:none}
+
+/* شاشة خيارات الرحلة */
+#ops,#opk{position:fixed;inset:0;z-index:3500;background:var(--cd,#fff);display:flex;flex-direction:column;padding:calc(18px + env(safe-area-inset-top,0px)) 0 calc(16px + env(safe-area-inset-bottom,0px));overflow-y:auto}
+#ops>*,#opk>*{margin-inline:20px}#ops .cxh,#opk .cxh{margin-bottom:12px}
+.opcar{text-align:center;padding:18px 0 6px}.opcar .car2{width:240px;height:130px;margin:0 auto}.opn{font-size:22px;margin-top:10px}
+.opnote{margin:12px 0 0!important;padding:16px 20px;background:var(--bg);display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--mu);line-height:1.7;margin-inline:0!important}.opnote b{font-size:44px}
+.opr{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px 0;border-bottom:1px solid var(--bd);font-size:19px;cursor:pointer}.opr i{font-style:normal;font-size:26px;color:var(--pr)}.opr em{font-style:normal;color:var(--mu);font-size:14px;flex:1;text-align:start;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.opx{background:none!important;border:0;box-shadow:none;width:auto;min-height:0;padding:4px 8px;color:var(--mu)}
+.tg{width:52px;height:30px;border-radius:15px;background:#c9ccd3;position:relative;flex:none;transition:.2s}.tg u{position:absolute;top:3px;inset-inline-start:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 2px 6px #0004;transition:.2s;text-decoration:none}.tg.on{background:var(--pr)}.tg.on u{inset-inline-start:25px}
+.opnt{margin-top:12px!important}.opfare{display:flex;justify-content:space-between;align-items:center;font-size:19px;padding:18px 0;margin-top:auto!important;border-top:1px solid var(--bd)}.opfare b{font-weight:500}
+.opok{flex:0 0 46%;min-height:56px;border-radius:14px;border:0;background:var(--pr);color:#fff;font-size:18px;box-shadow:none}.opok:disabled{background:#e4e6ea!important;background-image:none!important;color:#9aa0ac}
+#opq{margin-top:6px}#opr{flex:1;overflow-y:auto}
+.opnt{width:calc(100% - 40px)!important;box-sizing:border-box}
