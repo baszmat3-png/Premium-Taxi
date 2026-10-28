@@ -14,9 +14,9 @@ function mkSaver(file,get,minMs){let dirty=0,tm=null,wip=0,ms=0,bakAt=0;
  return{mark:()=>{dirty=1;if(!tm)tm=setTimeout(flush,Math.max(minMs,ms*4))},flush,ms:()=>ms}}
 let MUT=0;
 const F=process.env.DATA_FILE||'data.json',ADMIN=process.env.ADMIN_PIN||'1234',KEY=process.env.GOOGLE_MAPS_KEY||'',PUB=path.join(__dirname,'public');
-let db={codes:{},exp:{},topups:{},tx:{},customers:{},rests:{},orders:{},rides:{},drivers:{},tickets:{},staff:{},offers:{},cards:{},apps:{},cardorders:{},wd:{},incw:{},ctop:{},ctx:{},cfg:{base:1500,km:700,min:3000,foodKm:400,auto:1,maxKm:10}};
+let db={chat:{},codes:{},exp:{},topups:{},tx:{},customers:{},rests:{},orders:{},rides:{},drivers:{},tickets:{},staff:{},offers:{},cards:{},apps:{},cardorders:{},wd:{},incw:{},ctop:{},ctx:{},cfg:{base:1500,km:700,min:3000,foodKm:400,auto:1,maxKm:10}};
 {const L0=loadJSON(F);if(L0)Object.assign(db,L0)}
-db.cfg={maxDev:3,vpnBlock:1,timeGuard:1,timeTol:3,appPct:15,restPct:5,taxiPct:5,minBal:-15000,pay:[],minWd:15000,abOn:1,abWarn:4,abBan:6,abDays:3,abWin:30,abGrace:60,rt:[{id:'eco',n:'توفير',d:'التكسي الأوفر',m:1,g:'taxi'},{id:'super',n:'سوبر',d:'الخيار الأفضل',m:1.18,g:'taxi'},{id:'plus',n:'بلس',d:'راحة أكثر',m:1.3,g:'taxi'},{id:'box',n:'بوكس',d:'توصيل طرود وأغراض',m:1.1,g:'box'}],...db.cfg};if(!db.cfg.mig5){db.cfg.mig5=1;db.cfg.restPct=5;db.cfg.taxiPct=5}db.wd=db.wd||{};db.incw=db.incw||{};db.ctop=db.ctop||{};db.ctx=db.ctx||{};db.vars=db.vars||{};
+db.chat=db.chat||{};db.cfg={maxDev:3,vpnBlock:1,timeGuard:1,timeTol:3,appPct:15,restPct:5,taxiPct:5,minBal:-15000,pay:[],minWd:15000,abOn:1,abWarn:4,abBan:6,abDays:3,abWin:30,abGrace:60,rt:[{id:'eco',n:'توفير',d:'التكسي الأوفر',m:1,g:'taxi'},{id:'super',n:'سوبر',d:'الخيار الأفضل',m:1.18,g:'taxi'},{id:'plus',n:'بلس',d:'راحة أكثر',m:1.3,g:'taxi'},{id:'box',n:'بوكس',d:'توصيل طرود وأغراض',m:1.1,g:'box'}],...db.cfg};if(!db.cfg.mig5){db.cfg.mig5=1;db.cfg.restPct=5;db.cfg.taxiPct=5}db.wd=db.wd||{};db.incw=db.incw||{};db.ctop=db.ctop||{};db.ctx=db.ctx||{};db.vars=db.vars||{};
 for(const[k,x]of Object.entries({maintenance:{v:0,t:'b',pub:1,d:'وضع الصيانة: يوقف الطلبات الجديدة من الزبائن ويعرض لهم رسالة'},maintMsg:{v:'التطبيق في صيانة قصيرة، نعود قريبًا.',t:'s',pub:1,d:'رسالة الصيانة'},banner:{v:'',t:'s',pub:1,d:'شريط إعلان أعلى كل التطبيقات (فارغ = مخفي)'},rlPerMin:{v:240,t:'n',pub:0,d:'حد طلبات المستخدم الواحد في الدقيقة'},bumpMs:{v:350,t:'n',pub:0,d:'تأخير بث التحديثات الفورية (مللي ثانية) — ارفعه عند الضغط العالي'},maxSSE:{v:20000,t:'n',pub:0,d:'أقصى اتصالات بث مباشر؛ الزائد يعمل بالاستطلاع'},archiveDays:{v:0,t:'n',pub:0,d:'أرشفة الطلبات/الرحلات المنتهية الأقدم من N يوم إلى مجلد archive (0 = إيقاف). يبقي السيرفر سريعًا مع نمو السجل؛ الرصيد والمحاسبة لا تتأثر لكن الأقدم يختفي من اللوحة'}}))if(!db.vars[k])db.vars[k]={id:k,...x,at:Date.now()};
 const VAR=(k,d)=>{const x=db.vars[k];return x==null||x.v==null||x.v===''?d:x.v};
 let PVM=-1,PVC={};function PV(){if(PVM!==MUT){PVM=MUT;PVC={};for(const k in db.vars){const x=db.vars[k];if(x&&x.pub)PVC[k]=x.v}}return PVC}
@@ -84,7 +84,7 @@ function devCheck(id,h){const c=db.customers[id];if(!c)return false;const d=cdev
  const x=c.devs[d];if(!x||x.st)return false;
  if(x.ip!=ip){x.ip=ip;x.lat=now}x.last=now;return true}
 const who=h=>{if(h['x-role']=='customer')h['x-id']=sid(h['x-token'])};
-const W={customer:['orders','rides','tickets','apps','cardorders','ctop'],driver:['orders','rides','drivers','topups','wd'],rest:['rests','orders'],support:['orders','rides','tickets','drivers','apps','cardorders','topups','wd','ctop'],admin:['vars','cdev','rests','orders','rides','drivers','tickets','staff','cfg','offers','cards','apps','cardorders','topups','wd','wallet','incw','ctop','cwallet','exp']};
+const W={customer:['orders','rides','tickets','apps','cardorders','ctop','chat'],driver:['orders','rides','drivers','topups','wd'],rest:['rests','orders'],support:['orders','rides','tickets','drivers','apps','cardorders','topups','wd','ctop','chat'],admin:['chat','vars','cdev','rests','orders','rides','drivers','tickets','staff','cfg','offers','cards','apps','cardorders','topups','wd','wallet','incw','ctop','cwallet','exp']};
 const LK={},RL={};
 const lk=(k,f)=>{const n=Date.now(),e=LK[k]||(LK[k]={n:0,t:n});if(n-e.t>6e5){e.n=0;e.t=n}if(f===1)e.n++;else if(f===0)e.n=0;return e.n>=10};
 const eq=(a,b)=>{if(a==null||b==null||a===''||b==='')return false;a=Buffer.from(String(a));b=Buffer.from(String(b));return a.length==b.length&&cr.timingSafeEqual(a,b)};
@@ -105,8 +105,8 @@ const clean=(o,f)=>Object.fromEntries(Object.entries(o).map(([k,v])=>{v={...v};f
 const flt=(c,fn)=>Object.fromEntries(Object.entries(db[c]).filter(([,v])=>fn(v)));
 // ---- فهارس تُحدَّث تدريجيًا: كل سجل يتغيّر يُعاد فهرسته وحده (O(1)) بدل إعادة بناء كل شيء ----
 const mp=()=>Object.create(null);
-const IXS={orders:{co:'cid',do:'did',ro:'rid'},rides:{cr:'cid',dr:'did'},tickets:{ct:'cid'},apps:{ca:'cid'},cardorders:{cc:'cid'},ctop:{cp:'cid'},ctx:{cx:'cid'},topups:{dt:'did'},tx:{dx:'did'},wd:{dw:'did'},incw:{di:'did'}};
-const IXM_=['co','do','ro','cr','dr','ct','ca','cc','cp','cx','dt','dx','dw','di'];
+const IXS={orders:{co:'cid',do:'did',ro:'rid'},rides:{cr:'cid',dr:'did'},tickets:{ct:'cid'},chat:{ch:'cid'},apps:{ca:'cid'},cardorders:{cc:'cid'},ctop:{cp:'cid'},ctx:{cx:'cid'},topups:{dt:'did'},tx:{dx:'did'},wd:{dw:'did'},incw:{di:'did'}};
+const IXM_=['co','do','ro','cr','dr','ct','ch','ca','cc','cp','cx','dt','dx','dw','di'];
 let IX=null,IXF=1,CV=0;
 function ixNew(){const I={rv:mp(),pO:mp(),pR:mp(),pend:mp(),busy:mp()};for(const m of IXM_)I[m]=mp();return I}
 function ixAdd(I,c,id,o){const rv=[],sp=IXS[c];
@@ -128,11 +128,12 @@ const E0={};
 function custParts(i,I){const orders=I.co[i]||E0,rides=I.cr[i]||E0;
  const ids=new Set(),live=new Set();for(const k in orders){const o=orders[k],d=o.did;if(d&&db.drivers[d]){ids.add(d);if(o.st>=0&&o.st<4)live.add(d)}}for(const k in rides){const o=rides[k],d=o.did;if(d&&db.drivers[d]){ids.add(d);if(o.st>=0&&o.st<4)live.add(d)}}
  const drivers={};for(const d of ids){const x=db.drivers[d];drivers[d]={id:d,n:x.n,ph:x.ph,car:x.car,plate:x.plate,color:x.color,img:x.img,loc:live.has(d)?x.loc:undefined}}
- return{orders,rides,tickets:I.ct[i]||E0,apps:I.ca[i]||E0,cardorders:clean(I.cc[i]||E0,['cost','by']),me:{bal:(db.customers[i]||{}).bal||0,ab:abInfo(i)},ctop:I.cp[i]||E0,ctx:I.cx[i]||E0,drivers}}
+ return{orders,rides,tickets:I.ct[i]||E0,chat:I.ch[i]||E0,apps:I.ca[i]||E0,cardorders:clean(I.cc[i]||E0,['cost','by']),me:{bal:(db.customers[i]||{}).bal||0,ab:abInfo(i)},ctop:I.cp[i]||E0,ctx:I.cx[i]||E0,drivers}}
 const rsOf=I=>frag('rs',()=>clean(db.rests,['pin']));
+const chatV=()=>Object.fromEntries(Object.values(db.chat||{}).sort((a,b)=>b.at-a.at).slice(0,200).map(t=>[t.id,{...t,msgs:(t.msgs||[]).slice(-60)}]));
 function view(h){const r=h['x-role'],i=h['x-id'],I=ix();
- if(r=='admin')return{...db,codes:codeSum()};
- if(r=='support')return{...db,customers:clean(db.customers,['devs','sess','att']),rests:rsOf(I),drivers:clean(db.drivers,['pin','tfa','tfaP','tl']),staff:{},exp:{},codes:{},cards:clean(db.cards,['cost','v']),cardorders:clean(db.cardorders,['cost']),vars:PV()};
+ if(r=='admin')return{...db,codes:codeSum(),chat:chatV()};
+ if(r=='support')return{...db,customers:clean(db.customers,['devs','sess','att']),rests:rsOf(I),drivers:clean(db.drivers,['pin','tfa','tfaP','tl']),staff:{},exp:{},codes:{},chat:chatV(),cards:clean(db.cards,['cost','v']),cardorders:clean(db.cardorders,['cost']),vars:PV()};
  if(r=='rest'){const os=I.ro[i]||E0,ids=[...new Set(Object.values(os).map(v=>v.did).filter(d=>d&&db.drivers[d]))];return{cfg:pubc(db.cfg),rests:{[i]:db.rests[i]},orders:os,drivers:Object.fromEntries(ids.map(d=>{const x=db.drivers[d];return[d,{id:d,n:x.n,ph:x.ph,car:x.car,loc:x.loc,locAt:x.locAt}]}))}}
  if(r=='driver'){const me=db.drivers[i],dm=me?(()=>{const x={...me};['pin','tfa','tfaP','tl'].forEach(f=>delete x[f]);x.tfaOn=me.tfa?1:0;return x})():undefined;
   return{cfg:{...db.cfg,vars:PV()},topups:I.dt[i]||E0,tx:I.dx[i]||E0,wd:I.dw[i]||E0,incw:I.di[i]||E0,rests:rsOf(I),orders:clean({...(I.do[i]||E0),...I.pO},['rnote']),rides:clean({...(I.dr[i]||E0),...I.pR},['rnote']),drivers:{[i]:dm}}}
@@ -143,7 +144,7 @@ function viewJSON(h){const R=h['x-role'];
   return'{"cfg":'+frag('dc',()=>J({...db.cfg,vars:PV()}))+',"topups":'+J(I.dt[i]||E0)+',"tx":'+J(I.dx[i]||E0)+',"wd":'+J(I.dw[i]||E0)+',"incw":'+J(I.di[i]||E0)+',"rests":'+frag('fr',()=>J(rsOf(I)))+',"orders":'+J(clean({...(I.do[i]||E0),...I.pO},['rnote']))+',"rides":'+J(clean({...(I.dr[i]||E0),...I.pR},['rnote']))+',"drivers":{'+J(i)+':'+J(dm)+'}}'}
  if(R!='customer')return JSON.stringify(view(h));
  const I=ix(),p=custParts(h['x-id'],I),J=JSON.stringify;
- return'{"cfg":'+frag('fc',()=>J(pubc(db.cfg)))+',"rests":'+frag('fr',()=>J(rsOf(I)))+',"orders":'+J(p.orders)+',"rides":'+J(p.rides)+',"tickets":'+J(p.tickets)+',"offers":'+frag('fo',()=>J(db.offers))+',"cards":'+cardsPub()+',"apps":'+J(p.apps)+',"cardorders":'+J(p.cardorders)+',"me":'+J(p.me)+',"ctop":'+J(p.ctop)+',"ctx":'+J(p.ctx)+',"drivers":'+J(p.drivers)+'}'}
+ return'{"cfg":'+frag('fc',()=>J(pubc(db.cfg)))+',"rests":'+frag('fr',()=>J(rsOf(I)))+',"orders":'+J(p.orders)+',"rides":'+J(p.rides)+',"tickets":'+J(p.tickets)+',"chat":'+J(p.chat)+',"offers":'+frag('fo',()=>J(db.offers))+',"cards":'+cardsPub()+',"apps":'+J(p.apps)+',"cardorders":'+J(p.cardorders)+',"me":'+J(p.me)+',"ctop":'+J(p.ctop)+',"ctx":'+J(p.ctx)+',"drivers":'+J(p.drivers)+'}'}
 const VC=new Map();setInterval(()=>{for(const[k,e]of VC)if(e.m!==MUT)VC.delete(k)},3e4).unref();
 const inm=(q,t)=>String(q.headers['if-none-match']||'').split(',').some(x=>x.trim().replace(/^W\//,'')===t);
 function sendView(q,s){const h=q.headers,key=h['x-role']+'|'+(h['x-id']||''),now=Date.now();let e=VC.get(key);
@@ -253,6 +254,16 @@ function set(h,b){const{k,id}=b;let v=b.v;const r=h['x-role'],i=h['x-id'];
   if(v.st==-1){db.wd[id]={...old,st:-1,why:String(v.why||'').slice(0,200)};return 1}
   return 0}
  if(k=='topups'){if(r=='driver'){if(old||!v||v.did!=i||!(+v.amt>0)||+v.amt>5e6)return 0;{const im=String(v.img||'').slice(0,200);if(im&&Object.values(db.topups).some(x=>x.st>=0&&x.img==im))return 0}v={did:i,amt:Math.round(+v.amt),m:String(v.m||'').slice(0,60),img:String(v.img||'').slice(0,200),note:String(v.note||'').slice(0,300),st:0,at:Date.now()}}else{if(!old||!v)return 0;if(v.st==1&&old.st==0){credit(old.did,old.amt,'شحن بوصل تحويل ('+(old.m||'')+')');audit(h,'topup-ok',id,old.amt);db.topups[id]={...old,st:1,by:r,ok:Date.now()};return 1}if(v.st==-1&&old.st==0){db.topups[id]={...old,st:-1,why:String(v.why||'').slice(0,200)};return 1}return 0}}
+ if(k=='chat'){const now=Date.now(),str=(x,n)=>String(x==null?'':x).slice(0,n);
+  if(!v||typeof v!='object')return 0;
+  if(r=='customer'){if(id!='h'+i||(old&&old.cid!=i))return 0}else if(!old)return 0;
+  if(v.read){if(!old)return 1;const k2=r=='customer'?'cu':'su';if((old[k2]||0)===0)return 1;db.chat[id]={...old,[k2]:0};return 1}
+  const m=v.m;if(!m||typeof m!='object')return 0;
+  const t=str(m.t,1000).trim(),im=/^\/u\/[a-f0-9]{32}\.\w+$/.test(String(m.img||''))?String(m.img):'';if(!t&&!im)return 0;
+  const cu=db.customers[i]||{},th=old||{id,cid:i,cn:str(cu.n||v.cn,60),cp:str(cu.ph||v.cp,30),msgs:[],cu:0,su:0},c=r=='customer';
+  if(c&&!old&&(!th.cn||!th.cp)){th.cn=th.cn||str(v.cn,60);th.cp=th.cp||str(v.cp,30)}
+  db.chat[id]={...th,msgs:[...(th.msgs||[]),{f:c?'c':'s',t,img:im,at:now}].slice(-300),at:now,last:t||'📷 صورة',lf:c?'c':'s',su:c?(th.su||0)+1:0,cu:c?0:(th.cu||0)+1};
+  return 1}
  if(r=='customer'&&(!v||v.cid!=i||(old&&old.cid!=i)||(k!='tickets'&&v.st>0)||(['apps','cardorders'].includes(k)&&old&&(k=='cardorders'||old.st!==0))))return 0;
  if(r=='customer'&&(['tickets','apps'].includes(k)||(!old&&['orders','rides','cardorders'].includes(k)))){v=cust(k,v,!old);if(!v)return 0}
  if(r=='customer'&&k=='orders'&&!old){const R=db.rests[v.rid];if(!R||!R.open||R.pu>Date.now())return 0}
@@ -379,7 +390,7 @@ let UP=process.env.UPLOAD_DIR||path.join(path.dirname(path.resolve(F)),'uploads'
 try{fs.mkdirSync(UP,{recursive:true});fs.accessSync(UP,fs.constants.W_OK)}catch(e){console.error('UPLOAD_DIR not writable, using local uploads:',e.message);UP=path.join(__dirname,'uploads');try{fs.mkdirSync(UP,{recursive:true})}catch(_){}}
 const LIM=+process.env.MAX_UPLOAD_MB>0?process.env.MAX_UPLOAD_MB*1048576:1e8,X={'image/jpeg':'jpg','image/jpg':'jpg','image/png':'png','image/webp':'webp','video/mp4':'mp4','video/x-m4v':'mp4','video/webm':'webm','video/quicktime':'mov','video/3gpp':'3gp'},MT={jpg:'image/jpeg',png:'image/png',webp:'image/webp',mp4:'video/mp4',webm:'video/webm',mov:'video/quicktime','3gp':'video/3gpp'};
 const T={'.html':'text/html;charset=utf-8','.js':'text/javascript;charset=utf-8','.css':'text/css;charset=utf-8'};
-const LIGHT=new Set(['orders','rides','tickets','apps','cardorders','ctop','topups','wd','incw','drivers','wallet','cwallet','cdev']),IXV_=!!process.env.IX_VERIFY;
+const LIGHT=new Set(['orders','rides','tickets','chat','apps','cardorders','ctop','topups','wd','incw','drivers','wallet','cwallet','cdev']),IXV_=!!process.env.IX_VERIFY;
 const SC=new Map();
 function serveStatic(q,s,f,SH){const ae=String(q.headers['accept-encoding']||''),now=Date.now();let e=SC.get(f);
  const send=()=>{const ext=path.extname(f),tx=T[ext],enc=tx&&e.br&&/\bbr\b/.test(ae)?'br':tx&&e.gz&&/\bgzip\b/.test(ae)?'gzip':'',h={...SH,'Content-Type':tx||({'.jpg':'image/jpeg','.png':'image/png','.webp':'image/webp'})[ext]||'application/octet-stream','ETag':e.etag,'Cache-Control':ext=='.html'?'no-cache':'public,max-age=60,must-revalidate','Vary':'Accept-Encoding'};
