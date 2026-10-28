@@ -142,3 +142,6 @@ nav button.a .prb{box-shadow:0 0 0 2px color-mix(in srgb,var(--pr) 35%,transpare
 .orow{background:var(--cd)}.orow button{font-weight:500!important}
 .rsl{background:var(--cd)}
 .orow button{border-radius:0!important}.orow button+button{border-inline-start:1px solid var(--bd)!important}
+.leaflet-control-zoom,.maplibregl-ctrl-zoom-in,.maplibregl-ctrl-zoom-out{display:none!important}
+#ts.bs{position:fixed!important;bottom:0}
+.tst{top:calc(84px + env(safe-area-inset-top,0px))}
