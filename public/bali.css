@@ -146,3 +146,8 @@ nav button.a .prb{box-shadow:0 0 0 2px color-mix(in srgb,var(--pr) 35%,transpare
 #ts.bs{position:fixed!important;bottom:0}
 .tst{top:calc(84px + env(safe-area-inset-top,0px))}
 #ts.bs{background:var(--cd,#fff)!important;z-index:20!important}.top{z-index:25}
+
+/* حصر طبقات الخريطة داخل حاويتها كي لا تغطي النافذة والأزرار */
+#tmap,.map{isolation:isolate;z-index:0}
+#tx{isolation:isolate}
+.leaflet-container{isolation:isolate}
