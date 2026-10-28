@@ -123,3 +123,14 @@ nav button.a .prb{box-shadow:0 0 0 2px color-mix(in srgb,var(--pr) 35%,transpare
 
 /* إخفاء شعار/حقوق الخريطة */
 .leaflet-control-attribution,.maplibregl-ctrl-attrib,.maplibregl-ctrl-logo{display:none!important}
+
+/* ===== مطابقة التصميم المرجعي ===== */
+#ts.bs{border-radius:0;box-shadow:0 -2px 14px #0002}
+.grip{width:30px;height:12px;border-radius:0;margin:0 auto 6px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 12'%3E%3Cpath d='M4 3l11 6 11-6' fill='none' stroke='%23b3b7c2' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat}.grip.up{transform:scaleY(-1)}
+.srch{background:var(--bg);border-radius:14px;min-height:56px;margin:4px 0 0}.srch .sri{width:22px;height:22px;flex:none;color:var(--tx)}.srch .g{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sdv{height:1px;background:var(--bd);margin:14px -16px 12px}
+.locbtn{inset-inline-end:auto!important;right:14px!important;left:auto!important}
+.rtp.sa #rB,.rtp.sb #rA{display:none}
+.bs.pd{height:50vh;max-height:50vh}
+.rr2 .pp{font-size:20px}.rr2 .pp small{font-size:14px;font-weight:500;color:var(--mu)}
+.orow{display:flex!important}.orow button{flex:1;gap:6px!important;min-height:68px!important;font-size:16px!important;color:var(--mu)!important}.orow button+button{border-inline-start:1px solid var(--bd)}.orow svg{width:28px;height:28px}
