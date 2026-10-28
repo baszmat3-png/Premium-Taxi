@@ -37,3 +37,89 @@ html[data-app=customer] body{background:var(--bg)}
 [data-app=customer] .cats{border:0;box-shadow:var(--sh);border-radius:28px}
 [data-app=customer] .chips button{border-radius:999px;border:0;box-shadow:var(--sh)}
 [data-app=customer] nav{border-radius:0}
+
+/* ===== التنقل السفلي: رئيسي (4) + الطعام (5) ===== */
+.prb{display:inline-block;background:#e11d48;color:#fff;border-radius:6px;padding:1px 6px;font-size:12px;font-weight:800;font-style:normal;transform:rotate(-4deg);line-height:1.4}
+nav button.a .prb{box-shadow:0 0 0 2px color-mix(in srgb,var(--pr) 35%,transparent)}
+/* رأس صفحة الطعام: برو • الموقع • بحث • رئيسية */
+.fhd{display:flex;align-items:center;gap:8px;margin:2px 0 12px}
+.locp{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;min-height:46px;padding:0 12px;border-radius:999px;background:var(--cd);color:var(--pr);border:0;background-image:none;box-shadow:var(--sh);font-weight:700;font-size:14px}
+.locp .lt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.propill{flex:none;min-height:46px;padding:0 14px;border-radius:999px;background:var(--cd);border:0;background-image:none;box-shadow:var(--sh);width:auto}
+.propill .prb{font-size:15px;padding:2px 9px}
+.rim .rpro{position:absolute;top:8px;inset-inline-end:8px;background:#e11d48;color:#fff;font-style:normal;font-weight:800;font-size:12px;border-radius:7px;padding:2px 8px;z-index:2;transform:rotate(-3deg)}
+.rim .pcb~.rpro{top:36px}
+/* صفحة الخصومات */
+.dh{margin:2px 0 10px}
+.dch{margin:6px 0 14px}
+.dcard{padding:18px}
+.dcard .dt{font-size:18px;font-weight:800;line-height:1.6;margin-bottom:10px}
+.dbox{background:var(--bg);border-radius:16px;padding:12px 14px;margin:12px 0;color:var(--mu);line-height:1.9;font-size:14px}
+.dcode{display:flex;align-items:center;gap:8px;background:color-mix(in srgb,var(--pr) 14%,var(--cd));border-radius:18px;padding:8px}
+.dcode span{flex:1;background:var(--cd);border-radius:12px;padding:12px;text-align:center;font-weight:800;letter-spacing:1px;color:var(--mu)}
+.dcode button{width:auto;min-height:44px;background:none;color:var(--pr);border:0;background-image:none;box-shadow:none;font-weight:800;padding:0 12px}
+/* بطاقة الحساب والتوثيق */
+.pfc .vrow{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--bd);font-weight:700}
+.pfc .vrow .vv{flex:1;text-align:end;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.vb{display:inline-flex;align-items:center;gap:3px;background:#dcfce7;color:#166534;border-radius:99px;padding:2px 10px;font-size:12px;font-weight:800;white-space:nowrap}.vb.w{background:#fef3c7;color:#92400e}
+@media(prefers-color-scheme:dark){.vb{background:#14532d;color:#bbf7d0}.vb.w{background:#78350f;color:#fde68a}}
+/* صفحة برو */
+.prh{position:relative;background:#e11d48;margin:-16px -16px 14px;padding:calc(18px + env(safe-area-inset-top,0px)) 16px 18px;text-align:center;color:#fff}
+.prx{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));inset-inline-end:14px;background:#ffffff55;color:#fff;box-shadow:none}
+.prlogo{display:inline-block;background:#fff;color:#e11d48;font-weight:900;font-size:44px;line-height:1.1;padding:2px 22px;transform:rotate(-4deg);margin:6px 0 14px}
+.prrib{background:#fff;color:#111;font-weight:800;font-size:18px;padding:8px 18px;margin:0 auto;width:fit-content;transform:rotate(-1.5deg)}
+.prs{padding:22px 18px}
+.ps{position:relative;display:flex;gap:14px;align-items:flex-start;padding-bottom:26px;line-height:1.7}.ps:last-child{padding-bottom:0}
+.ps b{color:#e11d48;font-size:18px;display:block}
+.ps .pd{flex:none;width:22px;height:22px;border-radius:50%;border:2px solid #e11d48;background:radial-gradient(#e11d48 40%,transparent 45%);margin-top:4px}
+.ps:not(:last-child):after{content:"";position:absolute;inset-inline-start:10px;top:30px;bottom:4px;width:2px;background:#fbcfe8}
+.ps+.ps{} 
+.fq{border-bottom:1px solid var(--bd)}.fq:last-child{border:0}
+.fqh{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:16px 2px;font-weight:700;cursor:pointer}.fqh b{font-size:26px;font-weight:300;color:var(--tx)}
+.fqb{padding:0 2px 16px;line-height:1.95;color:var(--mu)}
+.prcta{position:fixed;z-index:15;inset-inline:0;bottom:calc(66px + env(safe-area-inset-bottom,0px));padding:10px 16px;background:linear-gradient(transparent,var(--bg) 35%)}
+.prcta .big{max-width:680px;margin:auto;display:block;width:100%;background:#1f4fff}
+/* رحلة التكسي: أزرار الانطلاق والوصول ثابتة + بحث أدق */
+.bs.full{top:0;max-height:none;height:100%;max-width:none;border-radius:0;overflow:hidden;padding-top:calc(10px + env(safe-area-inset-top,0px));padding-bottom:0}
+#tx.dst .top{display:none}
+.fcol{display:flex;flex-direction:column;height:100%;max-width:680px;margin:0 auto;min-height:0}
+.pint{flex:none;background:var(--cd);padding-bottom:6px}
+.rtp{display:grid;gap:8px;margin-top:8px}
+.rpr{display:flex;align-items:center;gap:10px;background:var(--bg);border:2px solid transparent;border-radius:16px;padding:2px 12px;min-height:54px;margin:0}
+.rpr.on{border-color:var(--pr);background:var(--cd)}
+.rpr input{flex:1;min-width:0;border:0;background:none;margin:0;box-shadow:none!important;font-size:17px;font-weight:700}
+.rpr .d1,.rpr .d2{flex:none}
+.rsl{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-bottom:12px}
+.stk{position:sticky;bottom:0;z-index:5;background:var(--cd);padding:10px 0 calc(8px + env(safe-area-inset-bottom,0px));margin-top:8px}
+.fcol .stk{flex:none;position:static}
+.rsum{position:sticky;top:0;z-index:6;background:var(--cd);display:grid;gap:2px;padding:4px 0 8px;margin:0 0 4px;border-bottom:1px solid var(--bd)}
+.rsum>div{display:flex;align-items:center;gap:12px;min-height:38px;cursor:pointer;font-weight:700}
+.rsum>div span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rsum .d1,.rsum .d2{width:14px;height:14px;flex:none;border-radius:50%;background:#f97316;border:3px solid #fde8d6}.rsum .d2{border-radius:4px;background:#1f2fff;border-color:#dbe0ff}
+
+.bs.tall{max-height:88vh}
+.bs .stk{box-shadow:0 -10px 14px -10px #0003}
+
+/* ===== نوافذ التكسي ثابتة الارتفاع (خريطة بالأعلى + لوحة بالأسفل) ===== */
+.bs.pd,.bs.po{overflow:hidden;padding-bottom:0;display:flex;flex-direction:column}
+.bs.pd{height:58vh;max-height:58vh}.bs.po{height:62vh;max-height:62vh}
+.bs.pd>.fcol,.bs.po>.fcol{flex:1;min-height:0;width:100%;max-width:680px}
+.bs.po .rsl{margin:0 -16px;padding:0 16px}
+.fvw{flex:none;padding:8px 0 calc(8px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--bd);background:var(--cd)}.fvb{margin:0 0 6px}
+.rs1{flex:none;display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:2px 0 8px}
+.rs1 span{display:flex;align-items:center;gap:8px;min-width:0;background:var(--bg);border-radius:12px;padding:0 10px;min-height:42px;font-weight:700;font-size:14px;cursor:pointer}
+.rs1 em{font-style:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rs1 .d1,.rs1 .d2{width:12px;height:12px;flex:none;border-radius:50%;background:#f97316;border:3px solid #fde8d6}.rs1 .d2{border-radius:3px;background:#1f2fff;border-color:#dbe0ff}
+.tabs2{flex:none}
+.ofoot{flex:none;background:var(--cd);border-top:1px solid var(--bd);margin:0 -16px;padding:4px 16px calc(10px + env(safe-area-inset-bottom,0px))}
+.orow{display:grid;grid-template-columns:repeat(3,1fr);margin-bottom:6px}
+.orow button{background:none;border:0;box-shadow:none;background-image:none;color:var(--mu);min-height:54px;font-size:13px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:2px}
+.orow button i{font-style:normal;font-size:20px;line-height:1.1}
+.locbtn{position:fixed;z-index:11;inset-inline-end:14px;bottom:320px;width:56px;height:56px;min-height:0;border-radius:50%;padding:0;border:0;background:var(--cd);background-image:none;box-shadow:0 6px 18px #0003;display:grid;place-items:center}
+.locbtn svg{width:28px;height:28px;stroke:var(--tx)}.locbtn[hidden]{display:none}
+.mk .ml{position:absolute;top:50%;right:calc(100% + 6px);transform:translateY(-50%);background:#fff;color:#111;font-weight:700;font-size:14px;line-height:1;padding:9px 12px;border-radius:999px;box-shadow:0 3px 10px #0003;white-space:nowrap}
+
+.dempty{text-align:center;padding:60px 20px}.dempty div{font-size:120px;line-height:1.1;filter:drop-shadow(0 12px 14px #0003)}.dempty p{font-size:20px;font-weight:600;margin:24px 0 0}
+
+/* إخفاء شعار/حقوق الخريطة */
+.leaflet-control-attribution,.maplibregl-ctrl-attrib,.maplibregl-ctrl-logo{display:none!important}
