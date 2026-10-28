@@ -36,20 +36,20 @@ async function sendWA(p,c){const m='رمز دخولك إلى تكسي المتم
 
 // ---- حماية الأجهزة / VPN / الوقت ----
 const HOPS=process.env.TRUST_PROXY_HOPS==null?1:Math.max(0,+process.env.TRUST_PROXY_HOPS||0),PCK=process.env.PROXYCHECK_KEY||'',DEVTTL=30*864e5;
-const cip=q=>{const a=String(q.headers['x-forwarded-for']||'').split(',').map(x=>x.trim()).filter(Boolean);const ip=(HOPS&&a.length)?a[Math.max(0,a.length-HOPS)]:(q.socket.remoteAddress||'');return String(ip).replace(/^::ffff:/,'').slice(0,60)};
+const cip=q=>{const cf=String(q.headers['cf-connecting-ip']||'').trim();if(cf&&process.env.TRUST_PROXY_HOPS==null)return cf.replace(/^::ffff:/,'').slice(0,60);const a=String(q.headers['x-forwarded-for']||'').split(',').map(x=>x.trim()).filter(Boolean);const ip=(HOPS&&a.length)?a[Math.max(0,a.length-HOPS)]:(q.socket.remoteAddress||'');return String(ip).replace(/^::ffff:/,'').slice(0,60)};
 const cdev=x=>/^[\w-]{16,64}$/.test(String(x||''))?String(x):'';
 const priv=ip=>!ip||/^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|::1$|fc|fd|fe80)/i.test(ip);
 const IPC=new Map();
-function ipinfo(ip){if(priv(ip))return Promise.resolve({vpn:0,priv:1});const n=Date.now(),e=IPC.get(ip);if(e&&n-e.t<(e.r?216e5:6e4))return e.p;
+function ipinfo(ip){if(priv(ip))return Promise.resolve({vpn:0,priv:1});const n=Date.now(),e=IPC.get(ip);if(e&&n-e.t<(e.r&&!(e.v&&e.v.vpn)?216e5:12e4))return e.p;
  const e2={t:n,r:0,v:null};e2.p=(async()=>{let v;try{
   if(PCK){const x=await fetch('https://proxycheck.io/v2/'+encodeURIComponent(ip)+'?key='+encodeURIComponent(PCK)+'&vpn=1&asn=1',{signal:AbortSignal.timeout(4000)}).then(r=>r.json()),o=x[ip]||{};if(x.status=='error')throw 0;v={vpn:o.proxy=='yes'?1:0,cn:o.isocode||'',city:o.city||'',isp:String(o.provider||'').slice(0,60),tz:o.timezone||''};}
-  else{const x=await fetch('http://ip-api.com/json/'+encodeURIComponent(ip)+'?fields=status,countryCode,city,isp,timezone,proxy,hosting',{signal:AbortSignal.timeout(4000)}).then(r=>r.json());if(x.status!='success')throw 0;v={vpn:(x.proxy||x.hosting)?1:0,cn:x.countryCode||'',city:x.city||'',isp:String(x.isp||'').slice(0,60),tz:x.timezone||''}}
+  else{const x=await fetch('http://ip-api.com/json/'+encodeURIComponent(ip)+'?fields=status,countryCode,city,isp,timezone,proxy,hosting,mobile',{signal:AbortSignal.timeout(4000)}).then(r=>r.json());if(x.status!='success')throw 0;v={vpn:((x.proxy||x.hosting)&&!x.mobile)?1:0,mob:x.mobile?1:0,cn:x.countryCode||'',city:x.city||'',isp:String(x.isp||'').slice(0,60),tz:x.timezone||''}}
   e2.r=1}catch(err){v={vpn:0,err:1}}
   e2.v=v;return v})();IPC.set(ip,e2);return e2.p}
 setInterval(()=>{if(IPC.size>5000)IPC.clear()},36e5).unref();
 const MSG={vpn:'تم اكتشاف VPN أو بروكسي. أوقفه ثم أعد المحاولة.',time:'وقت جهازك غير صحيح. فعّل «التاريخ والوقت التلقائي» من إعدادات الهاتف ثم أعد فتح التطبيق.'};
 const gTime=h=>{const c=db.cfg;if(c.timeGuard===0)return null;const t=+h['x-ct'];return(!(t>0)||Math.abs(Date.now()-t)>Math.max(1,+c.timeTol||3)*6e4)?{c:'time',e:MSG.time}:null};
-const gVpn=h=>{if(db.cfg.vpnBlock===0)return null;const ip=h['x-ip'],x=IPC.get(ip);if(x&&x.v&&x.v.vpn)return{c:'vpn',e:MSG.vpn};if(!x||(!x.r&&Date.now()-x.t>=6e4))ipinfo(ip);return null};
+const gVpn=h=>{if(db.cfg.vpnBlock===0)return null;const ip=h['x-ip'],x=IPC.get(ip);if(x&&x.v&&!x.v.err){const v=x.v,al=String(VAR('allowCn','IQ')||'').toUpperCase().split(/[\s,]+/).filter(Boolean),off=al.includes('OFF'),geo=!off&&al.length&&v.cn&&!v.mob&&!al.includes(String(v.cn).toUpperCase());if(v.vpn||geo)return{c:'vpn',e:MSG.vpn,ip,cn:v.cn||'',why:v.vpn?'proxy':'country'}}if(!x||(!x.r&&Date.now()-x.t>=6e4)||(x.r&&Date.now()-x.t>=(x.v&&x.v.vpn?12e4:216e5)))ipinfo(ip);return null};
 /* ---- حماية من التلاعب: إلغاء الطلب بعد الموافقة عليه (تحذير ثم إيقاف مؤقت) — الأرقام من لوحة التحكم ---- */
 const abK=()=>{const c=db.cfg,w=Math.min(50,Math.max(1,Math.round(+c.abWarn)||4));return{on:c.abOn!==0,w,b:Math.min(100,Math.max(w,Math.round(+c.abBan)||6)),days:Math.min(365,Math.max(1,Math.round(+c.abDays)||3)),win:Math.min(365,Math.max(0,Math.round(+c.abWin)||0)),gr:Math.min(600,Math.max(0,Math.round(+c.abGrace)||0))}};
 const abAct=c=>{const K=abK(),n=Date.now(),w=K.win*864e5;return(c&&c.ab||[]).filter(t=>!w||n-t<w).length};
