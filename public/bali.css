@@ -151,3 +151,13 @@ nav button.a .prb{box-shadow:0 0 0 2px color-mix(in srgb,var(--pr) 35%,transpare
 #tmap,.map{isolation:isolate;z-index:0}
 #tx{isolation:isolate}
 .leaflet-container{isolation:isolate}
+
+/* شاشة سبب إلغاء الرحلة */
+#cxs{position:fixed;inset:0;z-index:3500;background:var(--cd,#fff);display:flex;flex-direction:column;padding:calc(18px + env(safe-area-inset-top,0px)) 20px calc(18px + env(safe-area-inset-bottom,0px));overflow-y:auto}
+.cxh{display:grid;grid-template-columns:48px 1fr 48px;align-items:center;text-align:center;font-size:22px;margin-bottom:26px}.cxh b{font-weight:600}
+.cxb{background:none!important;border:0;box-shadow:none;color:var(--mu);font-size:30px;min-height:0;padding:0;width:48px;height:48px}
+.cxq{font-size:22px;margin:0 0 18px;font-weight:600}.cxw{background:#fff4e5;color:#8a4b00;border-radius:12px;padding:10px 14px;margin-bottom:12px;line-height:1.6;font-size:14px}
+.cxl{flex:1}.cxr{display:flex;align-items:center;gap:18px;padding:22px 4px;border-bottom:1px solid var(--bd);font-size:19px;cursor:pointer;margin-inline:0 18px}
+.rdo{width:26px;height:26px;flex:none;border-radius:50%;border:2.5px solid var(--mu);display:grid;place-items:center}.rdo.on{border-color:var(--pr)}.rdo.on::after{content:'';width:14px;height:14px;border-radius:50%;background:var(--pr)}
+.cxf{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:14px}.cxn{background:none!important;border:0;box-shadow:none;color:var(--tx);font-size:18px;min-height:52px;padding:0 24px;width:auto}
+.cxd{flex:0 0 46%;background:var(--cd)!important;background-image:none!important;border:2px solid #e11d1d;color:#e11d1d;border-radius:14px;min-height:56px;font-size:18px;box-shadow:none}
