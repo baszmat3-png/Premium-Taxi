@@ -134,3 +134,11 @@ nav button.a .prb{box-shadow:0 0 0 2px color-mix(in srgb,var(--pr) 35%,transpare
 .bs.pd{height:50vh;max-height:50vh}
 .rr2 .pp{font-size:20px}.rr2 .pp small{font-size:14px;font-weight:500;color:var(--mu)}
 .orow{display:flex!important}.orow button{flex:1;gap:6px!important;min-height:68px!important;font-size:16px!important;color:var(--mu)!important}.orow button+button{border-inline-start:1px solid var(--bd)}.orow svg{width:28px;height:28px}
+
+.car2{width:86px;height:48px;display:block;flex:none}.car2.bx{display:grid;place-items:center;font-size:34px}.rr2 .cw{flex:none}
+.rr2{padding:18px 14px!important;gap:16px!important}.rr2 .g b{font-size:21px}.rr2 .g .mu{font-size:16px}
+#ts .big{border-radius:14px;min-height:56px}
+.tabs2 button{font-size:19px;min-height:58px}
+.orow{background:var(--cd)}.orow button{font-weight:500!important}
+.rsl{background:var(--cd)}
+.orow button{border-radius:0!important}.orow button+button{border-inline-start:1px solid var(--bd)!important}
