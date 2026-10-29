@@ -18,7 +18,7 @@ html[data-theme=rose]:root body{background:radial-gradient(120% 45% at 50% 0,col
 html[data-theme]:root .big{background-image:linear-gradient(135deg,var(--pr),var(--pr2));box-shadow:0 8px 22px color-mix(in srgb,var(--pr) 35%,transparent)}
 html[data-theme]:root .card{border:1px solid var(--bd)}
 html[data-theme]:root input,html[data-theme]:root select,html[data-theme]:root textarea{background:var(--tint);color:var(--tx);border-color:var(--bd)}
-html[data-dark] .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.88) saturate(.7)}
+html[data-dark] .leaflet-container:not(.gl) .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.88) saturate(.7)}
 html[data-dark] .leaflet-container{background:#1a1a1a}
 #thb{position:fixed;inset-inline-start:12px;bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:900;width:42px;height:42px;border-radius:50%;border:1px solid var(--bd);background:var(--cd);color:var(--tx);box-shadow:var(--sh);font-size:20px;display:grid;place-items:center;cursor:pointer;padding:0;min-height:0}
 #thp{position:fixed;inset:0;z-index:99998;background:#0007;display:flex;align-items:flex-end;justify-content:center}

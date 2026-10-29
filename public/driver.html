@@ -20,7 +20,7 @@ body{padding:0;overflow:hidden;background:var(--bg)}[data-app=driver] .tb{displa
 .rt .tx{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ln{position:absolute;inset-inline-start:6px;top:21px;height:22px;width:2px;background:var(--bd)}
 .two{display:grid;grid-template-columns:1fr 1.4fr;gap:8px}.two button{min-height:50px}
 .radar{width:120px;height:120px;margin:6px auto;border-radius:50%;background:radial-gradient(circle,var(--pr) 0 14%,transparent 15%),repeating-radial-gradient(circle,color-mix(in srgb,var(--pr) 22%,transparent) 0 2px,transparent 3px 22px);animation:rd 2.4s linear infinite;opacity:.8}@keyframes rd{from{transform:scale(.85);opacity:.9}to{transform:scale(1.05);opacity:.35}}
-.dr{position:fixed;inset:0;z-index:40;background:#0007;animation:fd .2s}.dr>div{position:absolute;inset-block:0;inset-inline-start:0;width:min(86vw,360px);background:var(--cd);overflow:auto;padding:calc(20px + env(safe-area-inset-top,0px)) 0 20px;animation:sl .25s cubic-bezier(.2,.9,.3,1)}@keyframes sl{from{transform:translateX(100%)}}
+.dr{position:fixed;inset:0;z-index:40;background:#0007;animation:fd .2s}.dr>div{position:absolute;inset-block:0;inset-inline-start:0;width:min(86vw,360px);background:var(--cd);overflow:auto;padding:calc(20px + env(safe-area-inset-top,0px)) 0 20px;animation:sl .25s cubic-bezier(.2,.9,.3,1)}@keyframes sl{from{transform:translateX(100%)}}.dr.na,.dr.na>div{animation:none}
 .mi{display:flex;align-items:center;gap:14px;padding:16px 22px;border-bottom:1px solid var(--bd);font-weight:700;cursor:pointer}.mi span{font-size:22px;width:30px;text-align:center}
 .av{width:62px;height:62px;border-radius:50%;background:var(--bg) center/cover;display:grid;place-items:center;font-size:30px;flex:none;border:1px solid var(--bd)}
 .wc{background:var(--g);color:var(--pt);border-radius:24px;padding:18px;margin:6px 0 10px}.wc b{font-size:32px;display:block}.full{position:fixed;inset:0;z-index:30;background:var(--bg);overflow:auto;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 40px}.full>div{max-width:640px;margin:auto}
@@ -60,6 +60,8 @@ function card(j,i,A){const o=j.o,a=pos&&P1(j)?eta(pos,P1(j)):null,r=rt[o.id],tk=
  <div class="two" style="margin-top:10px"><button class="l" onclick="skip['${o.id}']=1;sel=null;draw()">تخطي</button><button onclick="take('${j.k}','${o.id}')">قبول الطلب</button></div></div>`}
 function take(k,id){if(!pos&&!confirm('موقعك غير محدد. المتابعة؟'))return;act(k,id,k=='rides'?{did:AUTH.id,st:1}:{did:AUTH.id})}
 const RST=['','وصلت للزبون','بدأت الرحلة','إنهاء الرحلة'];
+const farEnd=o=>DB.cfg.endConf!==0&&!o.dok&&(!pos||!o.to||dist(pos,o.to)>(+DB.cfg.endKm||0.4));
+function endRide(id){const o=DB.rides[id];if(!o)return;if(!farEnd(o))return act('rides',id,{st:4});act('rides',id,{req:1});alert('لم تصل إلى نقطة الوصول التي حدّدها الزبون. أُرسل للزبون سؤال «هل وصلت لوجهتك؟» وسيُفعَّل الإنهاء عند موافقته من جهازه.')}
 function active(j){const o=j.o,rd=j.k=='rides',st=o.st,tg=rd?(st<3?o.from:o.to):(st<3?o.rloc:o.loc),a=pos&&tg?eta(pos,tg):null,e=rt.act||a,
  steps=rd?['في الطريق','وصل','بالرحلة']:['المطعم','استلام','توصيل'],cur=rd?st-1:(st<=2?0:1);
  return `<div class="row sp"><div class="g"><b>${rd?(o.rg=='box'?'📦 بوكس':'🚕 رحلة'):'🍽️ '+esc(o.rn)}</b></div><div class="pr">${fm(price(j))}${o.paid?'<div class="tag s" style="font-size:11px">مدفوع بالمحفظة</div>':''}</div></div>
@@ -69,7 +71,8 @@ function active(j){const o=j.o,rd=j.k=='rides',st=o.st,tg=rd?(st<3?o.from:o.to):
  ${!rd?`<div class="mu">${o.its.map(i=>i.q+' × '+esc(i.n)).join('، ')}<br>${o.paid?'<b class="on">✅ مدفوع بالمحفظة — لا تستلم نقدًا</b>':'المطلوب من الزبون: <b>'+fmt(o.tot)+'</b>'}</div>`:''}
  <div class="row" style="margin:8px 0"><div class="g"><b>${esc(o.cn||'')}</b>${o.cp?`<div class="mu" dir="ltr" style="text-align:right">${esc(o.cp)}</div>`:''}</div>${o.cp?`<button class="l" style="min-width:46px" data-p="${esc(o.cp)}" onclick="callC(this.dataset.p)">📞 اتصال</button><a class="btn" target="_blank" style="min-width:46px;background:#25d366;color:#fff;border-color:#25d366" href="${wa(o.cp,'مرحباً، أنا كابتن تكسي المتميز')}">واتساب</a>`:''}</div>
  <div class="bt">${nv(tg)}${tg?`<button class="l" onclick="shareDest(${tg.lat},${tg.lng},'${rd&&st>=3?'نقطة الوصول':'نقطة الاستلام'}')">📤 مشاركة الوجهة</button>`:''}${(rd&&st==1)||(!rd&&st<3)?`<button class="l" onclick="rej('${j.k}','${o.id}')">رفض</button>`:''}</div>
- ${!rd&&st==1?`<button class="big" disabled>المطعم يجهّز الطلب… توجّه إليه</button>`:`<button class="big" onclick="act('${j.k}','${o.id}',{st:${st+1}})">${rd?RST[st]:(st==2?'استلمت من المطعم':'تم التسليم')}</button>`}`}
+ ${rd&&st==2&&o.bd?'<div class="mu on" style="margin:4px 0">✔ أكّد الزبون صعوده معك</div>':''}${rd&&st==3&&o.dok?'<div class="mu on" style="margin:4px 0">✔ أكّد الزبون وصوله لوجهته</div>':''}${rd&&st==3&&o.dno&&!o.req?'<div class="mu off" style="margin:4px 0">الزبون لم يؤكد الوصول بعد</div>':''}
+ ${!rd&&st==1?`<button class="big" disabled>المطعم يجهّز الطلب… توجّه إليه</button>`:rd&&st==3?`<button class="big" onclick="endRide('${o.id}')">${farEnd(o)?(o.req?'بانتظار تأكيد الزبون… (إعادة الإرسال)':'لم تصل بعد — اطلب تأكيد الزبون'):'إنهاء الرحلة'}</button>`:`<button class="big" onclick="act('${j.k}','${o.id}',{st:${st+1}})">${rd?RST[st]:(st==2?'استلمت من المطعم':'تم التسليم')}</button>`}`}
 /* ---------- المحفظة والسحب ---------- */
 function walletPg(){const m=me(),bal=m.bal||0,mn=DB.cfg.minBal??-15000,blk=bal<=mn,P=DB.cfg.pay||[],W=Object.values(DB.wd||{}).sort((a,b)=>b.at-a.at).slice(0,5),T=Object.values(DB.topups||{}).sort((a,b)=>b.at-a.at).slice(0,3),X=Object.values(DB.tx||{}).sort((a,b)=>b.at-a.at).slice(0,8),pend=W.some(w=>w.st==0),can=bal>=MIN()&&!pend;
  return `<div class="row sp"><h1>المحفظة</h1><button class="fab" onclick="pg='';draw()">✕</button></div>
@@ -148,7 +151,10 @@ function draw(){
  else if(!on)h+=`<div style="text-align:center;padding:6px 0 4px"><b style="font-size:20px">أنت غير متصل</b><div class="mu">فعّل زر الاتصال بالأعلى لبدء استلام الطلبات</div></div>${st}<button class="big" onclick="act('drivers','${AUTH.id}',{on:1${pos?',loc:pos':''}})">ابدأ استلام الطلبات</button>`;
  else if(!J.av.length)h+=`<div style="text-align:center"><div class="radar"></div><b style="font-size:19px">بانتظار الطلبات…</b><div class="mu">ستظهر الطلبات القريبة هنا مع صوت تنبيه</div></div>${st}`;
  else h+=`<div class="row sp"><b>طلبات متاحة (${J.av.length})</b><span class="mu">اسحب للتنقل بين الطلبات ↔</span></div><div class="rq" id="rq">${J.av.map((j,i)=>card(j,i,J.av.length)).join('')}</div>`;
- $('#v').innerHTML=h+'</div>'+(menu?drawer():'');
+ h+='</div>';const v=$('#v'),bs0=v.querySelector('.bs'),sy=bs0?bs0.scrollTop:0;
+ if(h!==window._lh){window._lh=h;v.innerHTML=h;const b1=v.querySelector('.bs');if(b1&&sy)b1.scrollTop=sy}
+ let dw=$('#dwr');if(!dw){dw=document.createElement('div');dw.id='dwr';document.getElementById('app').appendChild(dw)}
+ if(menu){const nw=!dw.firstChild,old=dw.firstChild&&dw.firstChild.firstChild,st0=old?old.scrollTop:0,k=drawer();if(nw||dw._k!==k){dw._k=k;dw.innerHTML=k;if(!nw){dw.firstChild.classList.add('na');const n1=dw.firstChild.firstChild;if(n1)n1.scrollTop=st0}}}else if(dw.firstChild){dw.innerHTML='';dw._k=''}
  const q=$('#rq');if(q)q.onscroll=()=>{clearTimeout(q._t);q._t=setTimeout(()=>{const c=[...q.children],mid=q.getBoundingClientRect().left+q.clientWidth/2;let b=c[0],bd=1e9;c.forEach(x=>{const r=x.getBoundingClientRect(),d=Math.abs(r.left+r.width/2-mid);if(d<bd){bd=d;b=x}});if(b&&b.dataset.i!=sel){sel=b.dataset.i;c.forEach(x=>x.classList.toggle('sel',x==b));mapUpd()}},120)};
  mapUpd()}
 setInterval(()=>{try{if(AUTH.pin&&DB.drivers[AUTH.id]&&me().on&&pos&&jobs().mine.length)fetch('/api/set',{method:'POST',headers:H(),body:JSON.stringify({k:'drivers',id:AUTH.id,v:{loc:pos}})}).catch(()=>{})}catch(e){}},4000);
