@@ -178,3 +178,5 @@ function shareDest(lat,lng,name){lat=+lat;lng=+lng;if(!Number.isFinite(lat)||!Nu
  c.innerHTML='<div style="text-align:center;font-weight:800;font-size:17px;margin-bottom:4px">📍 '+(name||'نقطة الوصول')+'</div><div style="text-align:center;color:#666;font-size:13px">اختر التطبيق الذي تريد فتح المسار الدقيق فيه</div>';
  c.append(b('🚙 فتح في Waze',()=>window.open(w,'_blank')),b('🗺️ فتح في خرائط Google',()=>window.open(g,'_blank')),b('📤 مشاركة عبر أي تطبيق',()=>{navigator.share?navigator.share({title:name||'نقطة الوصول',text:tx,url:g}).catch(()=>{}):window.open('https://wa.me/?text='+encodeURIComponent(tx),'_blank')}),b('📋 نسخ الرابط',()=>{navigator.clipboard?navigator.clipboard.writeText(g).then(()=>alert('تم نسخ الرابط')):prompt('انسخ الرابط',g)}),b('إغلاق',()=>{}));
  o.onclick=e=>{if(e.target==o)o.remove()};o.appendChild(c);document.body.appendChild(o)}
+
+try{if('serviceWorker' in navigator&&location.protocol=='https:')addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}))}catch(e){}

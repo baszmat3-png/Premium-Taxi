@@ -174,3 +174,10 @@ nav button.a .prb{box-shadow:0 0 0 2px color-mix(in srgb,var(--pr) 35%,transpare
 .opok{flex:0 0 46%;min-height:56px;border-radius:14px;border:0;background:var(--pr);color:#fff;font-size:18px;box-shadow:none}.opok:disabled{background:#e4e6ea!important;background-image:none!important;color:#9aa0ac}
 #opq{margin-top:6px}#opr{flex:1;overflow-y:auto}
 .opnt{width:calc(100% - 40px)!important;box-sizing:border-box}
+
+/* خريطة الرحلة المصغّرة */
+.tmp{height:150px;overflow:hidden;position:relative;background:#e8e6e0}.tin{position:absolute;left:50%;top:50%;width:640px;height:190px;transform:translate(-50%,-50%)}.tin img{position:absolute;width:256px;height:256px;max-width:none!important}
+.tpn{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;gap:2px}.tpn b{background:#fff;color:#111;font-size:13px;font-weight:700;padding:2px 9px;border-radius:10px;box-shadow:0 2px 6px #0004;white-space:nowrap}
+.tpn i{width:16px;height:16px;border:3px solid #fff;border-radius:50%;background:#f97316;box-shadow:0 2px 6px #0005}.tpn.b i{border-radius:4px;background:#1f2fff}
+/* تصغير قائمة البحث */
+.bs.pd.mn{height:auto!important;max-height:none!important}.bs.mn .rsl,.bs.mn .fvw{display:none!important}.bs.mn .grip{transform:scaleY(-1)}
