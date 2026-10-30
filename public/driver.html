@@ -138,9 +138,10 @@ async function tfaSetup(){const[o,j]=await tfa('setup');if(!o)return alert(j.e||
  s.querySelector('.go').onclick=async()=>{const[ok,k]=await tfa('enable',s.querySelector('#tc').value);if(!ok)return alert(k.e||'الرمز غير صحيح');AUTH.token=k.token;localStorage[KEY]=JSON.stringify(AUTH);s.remove();await load();draw();alert('تم تفعيل المصادقة الثنائية ✔\nستحتاج الرمز عند كل تسجيل دخول جديد.')};document.body.appendChild(s)}
 async function tfaOff(){const c=prompt('أدخل رمز المصادقة الحالي لإيقاف الحماية');if(!c)return;const[ok,j]=await tfa('disable',c);if(!ok)return alert(j.e||'الرمز غير صحيح');delete AUTH.token;localStorage[KEY]=JSON.stringify(AUTH);await load();draw()}
 function draw(){
- if(!AUTH.pin||!DB.drivers[AUTH.id]){$('#dm').hidden=1;return $('#v').innerHTML='<div style="padding:12vh 20px;max-width:440px;margin:auto"><div style="font-size:60px;text-align:center">🚕</div><h1 style="text-align:center">دخول الكابتن</h1><div class="card"><input id="li" placeholder="رمز الكابتن"><input id="lp" type="password" placeholder="الرمز السري"><button class="big" onclick="lg()">دخول</button></div></div>'}
+ if(!AUTH.pin||!DB.drivers[AUTH.id]){window._lh='';$('#dm').hidden=1;return $('#v').innerHTML='<div style="padding:12vh 20px;max-width:440px;margin:auto"><div style="font-size:60px;text-align:center">🚕</div><h1 style="text-align:center">دخول الكابتن</h1><div class="card"><input id="li" placeholder="رمز الكابتن"><input id="lp" type="password" placeholder="الرمز السري"><button class="big" onclick="lg()">دخول</button></div></div>'}
  const m=me(),bal=m.bal||0,mn=DB.cfg.minBal??-15000,blk=bal<=mn,on=!!m.on&&!blk,J=jobs();
- if(pg){$('#dm').hidden=1;$('#v').innerHTML=`<div class="full"><div>${({wallet:walletPg,earn:earnPg,set:setPg,inc:incPg})[pg]()}</div></div>`;return}
+ {const d0=document.getElementById('dwr');if(d0&&(pg||!menu)){d0.innerHTML='';d0._k=''}}
+ if(pg){window._lh='';$('#dm').hidden=1;$('#v').innerHTML=`<div class="full"><div>${({wallet:walletPg,earn:earnPg,set:setPg,inc:incPg})[pg]()}</div></div>`;return}
  const ids=J.av.map(j=>j.o.id);if(known===null)known=new Set(ids);else{const nw=ids.filter(i=>!known.has(i));if(nw.length&&on&&snd&&!J.mine.length)ring(3);ids.forEach(i=>known.add(i))}
  const a=J.mine[0];if(!a&&J.av.length&&!J.av.some(j=>j.o.id==sel))sel=J.av[0].o.id;if(!J.av.length||a)sel=null;
  const nn=J.mine.length;if(window._n!=null&&nn>window._n&&snd)ring(1);window._n=nn;
