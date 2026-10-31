@@ -11,8 +11,8 @@ body{padding:0;overflow:hidden;background:var(--bg)}[data-app=driver] .tb{displa
 .fab{width:48px;height:48px;min-height:48px;padding:0;border-radius:50%;background:var(--cd);color:var(--tx);box-shadow:0 6px 18px #0003;font-size:20px;border:0;background-image:none}
 .pw{display:flex;align-items:center;gap:10px;background:var(--cd);border-radius:999px;padding:6px 8px 6px 16px;box-shadow:0 6px 18px #0003;font-weight:800;cursor:pointer;user-select:none}
 .pw i{width:50px;height:28px;border-radius:99px;background:#cbd2dd;position:relative;transition:.2s}.pw i:after{content:"";position:absolute;top:3px;inset-inline-start:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 2px 5px #0004}.pw.on i{background:#16a34a}.pw.on i:after{inset-inline-start:25px}
-.bs{position:fixed;z-index:10;inset-inline:0;bottom:0;max-height:70vh;overflow-y:auto;background:var(--cd);border-radius:28px 28px 0 0;padding:8px 16px calc(18px + env(safe-area-inset-bottom,0px));box-shadow:0 -12px 34px #0003;max-width:680px;margin:auto}
-.grip{display:block;width:44px;height:5px;border-radius:9px;background:var(--bd);margin:2px auto 12px}
+.grip:after{content:'';position:absolute;inset:-14px -40px}.bs.mn{padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}.bs.mn .grip{transform:scaleY(1)}.bs{position:fixed;z-index:10;inset-inline:0;bottom:0;max-height:70vh;overflow-y:auto;background:var(--cd);border-radius:28px 28px 0 0;padding:8px 16px calc(18px + env(safe-area-inset-bottom,0px));box-shadow:0 -12px 34px #0003;max-width:680px;margin:auto}
+.grip{position:relative;display:block;width:44px;height:5px;border-radius:9px;background:var(--bd);margin:2px auto 12px}
 .rq{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -16px;padding:4px 16px 8px;scrollbar-width:none}.rq::-webkit-scrollbar{display:none}
 .rc2{flex:0 0 90%;scroll-snap-align:center;border:1.5px solid var(--bd);border-radius:22px;padding:14px;background:var(--cd);transition:border-color .2s,box-shadow .2s}.rc2.sel{border-color:var(--pr);box-shadow:0 0 0 4px color-mix(in srgb,var(--pr) 14%,transparent)}
 .pr{font-size:26px;font-weight:800;line-height:1.2}.chip{display:inline-flex;align-items:center;gap:6px;background:color-mix(in srgb,var(--pr) 10%,var(--cd));color:var(--pr);border-radius:99px;padding:4px 12px;font-weight:800;font-size:13px}
@@ -29,7 +29,7 @@ body{padding:0;overflow:hidden;background:var(--bg)}[data-app=driver] .tb{displa
 <body><div id="app"><div id="dm" class="map" hidden></div><div id="v"></div></div>
 <script>
 auth('driver');
-let pos=null,first=1,sel=null,skip={},menu=0,pg='',known=null,wv={a:'',m:'زين كاش',n:'',w:''},wimg='',snd=localStorage.dsnd!=='0',rt={},pv={},mapK='';
+let dmin=0,pos=null,first=1,sel=null,skip={},menu=0,pg='',known=null,wv={a:'',m:'زين كاش',n:'',w:''},wimg='',snd=localStorage.dsnd!=='0',rt={},pv={},mapK='';
 navigator.geolocation&&navigator.geolocation.watchPosition(p=>{pos={lat:p.coords.latitude,lng:p.coords.longitude};if(AUTH.pin&&DB.drivers[AUTH.id])mapUpd()},()=>{},{enableHighAccuracy:true,maximumAge:5000});
 const me=()=>DB.drivers[AUTH.id]||{},MIN=()=>DB.cfg.minWd||15000,tod=t=>new Date(t).toDateString()==new Date().toDateString();
 const nv=p=>p?`<a class="btn" style="flex:1" target="_blank" href="${nav(p)}">🧭 ملاحة</a>`:'';
@@ -60,6 +60,11 @@ function card(j,i,A){const o=j.o,a=pos&&P1(j)?eta(pos,P1(j)):null,r=rt[o.id],tk=
  <div class="two" style="margin-top:10px"><button class="l" onclick="skip['${o.id}']=1;sel=null;draw()">تخطي</button><button onclick="take('${j.k}','${o.id}')">قبول الطلب</button></div></div>`}
 function take(k,id){if(!pos&&!confirm('موقعك غير محدد. المتابعة؟'))return;act(k,id,k=='rides'?{did:AUTH.id,st:1}:{did:AUTH.id})}
 const RST=['','وصلت للزبون','بدأت الرحلة','إنهاء الرحلة'];
+function dmT(){dmin=dmin?0:1;draw()}
+function activeMini(j){const o=j.o,rd=j.k=='rides',st=o.st,tg=rd?(st<3?o.from:o.to):(st<3?o.rloc:o.loc),a=pos&&tg?eta(pos,tg):null,e=rt.act||a;
+ return `<div class="row sp"><div class="g"><b>${rd?(o.rg=='box'?'📦 بوكس':'🚕 رحلة'):'🍽️ '+esc(o.rn)}</b> <span class="chip">${st<3||!rd?'📍':'🏁'} ${e?e.min:'-'} د • ${e?e.km.toFixed(1):'-'} كم</span></div><div class="pr">${fm(price(j))}</div></div>
+ ${!rd&&st==1?`<button class="big" disabled>المطعم يجهّز الطلب…</button>`:rd&&st==3?`<button class="big" onclick="endRide('${o.id}')">${farEnd(o)?(o.req?'بانتظار تأكيد الزبون…':'لم تصل بعد — اطلب تأكيد الزبون'):'إنهاء الرحلة'}</button>`:`<button class="big" onclick="act('${j.k}','${o.id}',{st:${st+1}})">${rd?RST[st]:(st==2?'استلمت من المطعم':'تم التسليم')}</button>`}`}
+(()=>{let y0=null;document.addEventListener('touchstart',e=>{y0=e.target.closest&&e.target.closest('.bs')&&!e.target.closest('.rq,button,a,input,textarea')?e.touches[0].clientY:null},{passive:true});document.addEventListener('touchend',e=>{if(y0==null)return;const d=e.changedTouches[0].clientY-y0;y0=null;if(!document.querySelector('.bs .st3')&&!document.querySelector('.bs.mn'))return;if(d>50&&!dmin){dmin=1;draw()}else if(d<-50&&dmin){dmin=0;draw()}},{passive:true})})();
 const farEnd=o=>DB.cfg.endConf!==0&&!o.dok&&(!pos||!o.to||dist(pos,o.to)>(+DB.cfg.endKm||0.4));
 function endRide(id){const o=DB.rides[id];if(!o)return;if(!farEnd(o))return act('rides',id,{st:4});act('rides',id,{req:1});alert('لم تصل إلى نقطة الوصول التي حدّدها الزبون. أُرسل للزبون سؤال «هل وصلت لوجهتك؟» وسيُفعَّل الإنهاء عند موافقته من جهازه.')}
 function active(j){const o=j.o,rd=j.k=='rides',st=o.st,tg=rd?(st<3?o.from:o.to):(st<3?o.rloc:o.loc),a=pos&&tg?eta(pos,tg):null,e=rt.act||a,
@@ -147,9 +152,9 @@ function draw(){
  const nn=J.mine.length;if(window._n!=null&&nn>window._n&&snd)ring(1);window._n=nn;
  const td=[...Object.values(DB.orders),...Object.values(DB.rides)].filter(o=>o.did==AUTH.id&&o.st==4&&tod(o.at)),earn=td.reduce((s,o)=>s+(o.fee||o.fare||0)-(o.com||0),0),
  st=`<div class="stats"><div class="stat"><b>${td.length}</b>مشاوير اليوم</div><div class="stat"><b>${fmt(earn)}</b>أرباح اليوم</div></div>${incMini()}`;
- let h=`<div class="top"><button class="fab" onclick="menu=1;draw()">☰</button><div class="pw ${on?'on':''}" ${blk?'style="opacity:.6"':''} onclick="${blk?"pg='wallet';draw()":`act('drivers','${AUTH.id}',{on:${on?0:1}${pos?',loc:pos':''}})`}"><span>${blk?'موقوف':on?'متصل':'غير متصل'}</span><i></i></div><button class="fab" onclick="pg='wallet';draw()">💰</button></div><div class="bs"><i class="grip"></i>`;
+ let h=`<div class="top"><button class="fab" onclick="menu=1;draw()">☰</button><div class="pw ${on?'on':''}" ${blk?'style="opacity:.6"':''} onclick="${blk?"pg='wallet';draw()":`act('drivers','${AUTH.id}',{on:${on?0:1}${pos?',loc:pos':''}})`}"><span>${blk?'موقوف':on?'متصل':'غير متصل'}</span><i></i></div><button class="fab" onclick="pg='wallet';draw()">💰</button></div><div class="bs${dmin&&a?' mn':''}"><i class="grip" onclick="dmT()"></i>`;
  if(blk)h+=`<div class="off"><b>⛔ حسابك موقوف</b><div class="mu">وصل رصيدك إلى ${fmt(mn)} أو أقل. اشحن رصيدك لاستلام الطلبات.</div></div><button class="big" onclick="pg='wallet';draw()">شحن الرصيد</button>`;
- else if(a)h+=active(a);
+ else if(a)h+=dmin?activeMini(a):active(a);
  else if(!on)h+=`<div style="text-align:center;padding:6px 0 4px"><b style="font-size:20px">أنت غير متصل</b><div class="mu">فعّل زر الاتصال بالأعلى لبدء استلام الطلبات</div></div>${st}<button class="big" onclick="act('drivers','${AUTH.id}',{on:1${pos?',loc:pos':''}})">ابدأ استلام الطلبات</button>`;
  else if(!J.av.length)h+=`<div style="text-align:center"><div class="radar"></div><b style="font-size:19px">بانتظار الطلبات…</b><div class="mu">ستظهر الطلبات القريبة هنا مع صوت تنبيه</div></div>${st}`;
  else h+=`<div class="row sp"><b>طلبات متاحة (${J.av.length})</b><span class="mu">اسحب للتنقل بين الطلبات ↔</span></div><div class="rq" id="rq">${J.av.map((j,i)=>card(j,i,J.av.length)).join('')}</div>`;
