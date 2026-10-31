@@ -3,7 +3,7 @@ on: {workflow_dispatch: {}, push: {tags: ['v*']}}
 jobs:
   apk:
     runs-on: ubuntu-latest
-    strategy: {matrix: {app: [customer, captain, owner, support, restaurant]}}
+    strategy: {matrix: {app: [customer, captain, owner, support, restaurant, restpos]}}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

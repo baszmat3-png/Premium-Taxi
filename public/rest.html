@@ -26,7 +26,7 @@ function choose(t,L){const s=document.createElement('div');s.className='sheet';s
 const pauseList=(ap2,resume)=>[...(resume?[['▶ تشغيل الآن',()=>ap2({pu:0,off:0}),'']]:[]),['⏸ إيقاف لمدة ساعة',()=>ap2({pu:Date.now()+36e5,off:0}),''],['⏸ إيقاف لمدة ساعتين',()=>ap2({pu:Date.now()+72e5,off:0}),''],['⏸ إيقاف حتى نهاية اليوم',()=>ap2({pu:dayEnd(),off:0}),''],['⛔ إيقاف حتى أعيد تشغيله',()=>ap2({pu:0,off:1}),'d']];
 
 /* ---- المطعم: الحالة ---- */
-const rState=r=>!r.open?['off','مغلق']:r.pu>Date.now()?['w','موقوف مؤقتًا حتى '+hm(r.pu)]:['on','مفتوح'];
+const rState=r=>!r.open?['off','مغلق']:r.pu>Date.now()?['w','موقوف مؤقتًا حتى '+hm(r.pu)]:rBz(r)?['w','مشغول']:['on','مفتوح'];
 function rStatus(){const r=R();choose('حالة المطعم',[['🟢 فتح المطعم واستقبال الطلبات',()=>act('rests',AUTH.id,{open:1,pu:0}),''],['⏸ إيقاف الطلبات ساعة',()=>act('rests',AUTH.id,{open:1,pu:Date.now()+36e5}),''],['⏸ إيقاف الطلبات ساعتين',()=>act('rests',AUTH.id,{open:1,pu:Date.now()+72e5}),''],['⏸ إيقاف حتى نهاية اليوم',()=>act('rests',AUTH.id,{open:1,pu:dayEnd()}),''],['🔴 إغلاق حتى أعيد التشغيل',()=>act('rests',AUTH.id,{open:0,pu:0}),'d']])}
 /* ---- المنيو ---- */
 const setItem=(id,p)=>act('rests',AUTH.id,{items:(R().items||[]).map(i=>i.id==id?{...i,...p}:i)});

@@ -33,7 +33,7 @@ const pic=x=>`<div class="em">${x.img?`<img alt="" src="${esc(x.img)}">`:ico(x)}
 const steps=(S,st)=>`<div class="steps">${S.map((s,i)=>`<div class="st ${i<=st?'d':''} ${i==st?'c':''}"><i></i>${s}</div>`).join('')}</div>`;
 const mins=s=>{const a=s.split(':');return +a[0]*60+ +a[1]};
 function inT(f,t){if(!f||!t)return true;const n=new Date(),m=n.getHours()*60+n.getMinutes(),a=mins(f),b=mins(t);return a==b||(a<b?m>=a&&m<b:m>=a||m<b)}
-const rOpen=r=>!!r.open&&!(r.pu>Date.now());
+const rBz=r=>r.bz==1||r.bz>Date.now(),rOpen=r=>!!r.open&&!(r.pu>Date.now())&&!rBz(r),rLbl=r=>rOpen(r)?'مفتوح':(r.open&&!(r.pu>Date.now())&&rBz(r)?'مشغول':'مغلق');
 const itOk=(i,r)=>{const c=(r&&r.cs&&r.cs[i.cat||''])||{};return !i.off&&!(i.pu>Date.now())&&inT(i.f,i.t)&&!c.off&&!(c.pu>Date.now())&&inT(c.f,c.t)};
 const BG={lat:33.3152,lng:44.3661};
 const dist=(a,b)=>{const r=x=>x*Math.PI/180,dl=r(b.lat-a.lat),dg=r(b.lng-a.lng),x=Math.sin(dl/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dg/2)**2;return 12742*Math.asin(Math.sqrt(x))};
