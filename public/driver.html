@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" data-app="driver"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>تكسي المتميز - الكابتن</title>
-<link rel="stylesheet" href="shared.css"><link rel="stylesheet" href="themes.css"><script src="config.js"></script><script src="shared.js"></script><script src="themes.js"></script>
+<link rel="stylesheet" href="shared.css"><link rel="stylesheet" href="themes.css"><script src="config.js"></script><script src="shared.js"></script><script src="themes.js"></script><script src="nav.js"></script>
 <style>
 [data-app=driver]{--pr:#1f4fff;--pt:#fff;--bg:#f4f6fb}
 @media(prefers-color-scheme:dark){[data-app=driver]{--pr:#7d97ff;--pt:#050a24}}
@@ -25,12 +25,17 @@ body{padding:0;overflow:hidden;background:var(--bg)}[data-app=driver] .tb{displa
 .av{width:62px;height:62px;border-radius:50%;background:var(--bg) center/cover;display:grid;place-items:center;font-size:30px;flex:none;border:1px solid var(--bd)}
 .wc{background:var(--g);color:var(--pt);border-radius:24px;padding:18px;margin:6px 0 10px}.wc b{font-size:32px;display:block}.full{position:fixed;inset:0;z-index:30;background:var(--bg);overflow:auto;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 40px}.full>div{max-width:640px;margin:auto}
 .st3{display:flex;gap:8px;margin:10px 0}.st3 span{flex:1;text-align:center;font-size:12px;font-weight:700;padding:6px 2px;border-radius:12px;background:var(--bg);color:var(--mu)}.st3 span.d{background:color-mix(in srgb,var(--ok) 15%,var(--cd));color:var(--ok)}.st3 span.c{background:var(--pr);color:var(--pt)}
+#nvb{position:fixed;z-index:12;inset-inline:12px;top:calc(76px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:10px;background:#111827;color:#fff;border-radius:18px;padding:10px 12px;box-shadow:0 8px 24px #0006}
+#nvb .nvg{font-size:38px;line-height:1;width:50px;text-align:center}#nvb .nvt{flex:1;min-width:0}#nvb .nvt b{display:block;font-size:18px}#nvb .nvt span{display:block;font-size:13px;opacity:.75;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#nvb button{width:40px;height:40px;min-height:0;padding:0;border-radius:50%;background:#ffffff1f;color:#fff;font-size:18px;flex:none}
+#nvr{position:fixed;z-index:12;inset-inline-start:14px;background:#111827;color:#fff;border-radius:99px;padding:10px 16px;box-shadow:0 6px 18px #0005}
+.navar{transition:transform .9s linear}.navar .nvi{transition:transform .5s linear;filter:drop-shadow(0 3px 5px #0006)}
 </style></head>
 <body><div id="app"><div id="dm" class="map" hidden></div><div id="v"></div></div>
 <script>
 auth('driver');
 let dmin=0,pos=null,first=1,sel=null,skip={},menu=0,pg='',known=null,wv={a:'',m:'زين كاش',n:'',w:''},wimg='',snd=localStorage.dsnd!=='0',rt={},pv={},mapK='';
-navigator.geolocation&&navigator.geolocation.watchPosition(p=>{pos={lat:p.coords.latitude,lng:p.coords.longitude};if(AUTH.pin&&DB.drivers[AUTH.id])mapUpd()},()=>{},{enableHighAccuracy:true,maximumAge:5000});
+navigator.geolocation&&navigator.geolocation.watchPosition(p=>{pos={lat:p.coords.latitude,lng:p.coords.longitude};if(AUTH.pin&&DB.drivers[AUTH.id]){mapUpd();try{navTick(p.coords)}catch(e){}}},()=>{},{enableHighAccuracy:true,maximumAge:5000});
 const me=()=>DB.drivers[AUTH.id]||{},MIN=()=>DB.cfg.minWd||15000,tod=t=>new Date(t).toDateString()==new Date().toDateString();
 const nv=p=>p?`<a class="btn" style="flex:1" target="_blank" href="${nav(p)}">🧭 ملاحة</a>`:'';
 const rej=(k,id)=>{const o=(k=='orders'?DB.orders:DB.rides)[id];confirm('رفض الطلب؟ سيُحوَّل لأقرب كابتن آخر.'+(k=='orders'&&+DB.cfg.rejFee>0?'\n⚠️ ستُخصم غرامة رفض '+fmt(+DB.cfg.rejFee)+' من محفظتك.':''))&&act(k,id,{did:null,rej:[...(o.rej||[]),AUTH.id],...(k=='rides'?{st:0}:{})})};
@@ -75,7 +80,7 @@ function active(j){const o=j.o,rd=j.k=='rides',st=o.st,tg=rd?(st<3?o.from:o.to):
  <div class="rt"><span class="ln"></span><p><i class="d1"></i><span class="tx">${esc(rd?(o.fa||'نقطة الانطلاق'):o.rn)}</span></p><p><i class="d2"></i><span class="tx">${esc(rd?(o.ta||'الوجهة'):(o.note||'موقع الزبون'))}</span></p></div>${rd&&(o.sn||o.dn2||o.rt2)?'<div class="mu" style="margin-top:6px">'+(o.sn?'🛑 توقف: '+esc(o.sn)+'  ':'')+(o.dn2?'📍 وجهة ثانية: '+esc(o.dn2)+'  ':'')+(o.rt2?'↔ ذهاب وإياب':'')+'</div>':''}
  ${!rd?`<div class="mu">${o.its.map(i=>i.q+' × '+esc(i.n)).join('، ')}<br>${o.paid?'<b class="on">✅ مدفوع بالمحفظة — لا تستلم نقدًا</b>':'المطلوب من الزبون: <b>'+fmt(o.tot)+'</b>'}</div>`:''}
  <div class="row" style="margin:8px 0"><div class="g"><b>${esc(o.cn||'')}</b>${o.cp?`<div class="mu" dir="ltr" style="text-align:right">${esc(o.cp)}</div>`:''}</div>${o.cp?`<button class="l" style="min-width:46px" data-p="${esc(o.cp)}" onclick="callC(this.dataset.p)">📞 اتصال</button><a class="btn" target="_blank" style="min-width:46px;background:#25d366;color:#fff;border-color:#25d366" href="${wa(o.cp,'مرحباً، أنا كابتن تكسي المتميز')}">واتساب</a>`:''}</div>
- <div class="bt">${nv(tg)}${tg?`<button class="l" onclick="shareDest(${tg.lat},${tg.lng},'${rd&&st>=3?'نقطة الوصول':'نقطة الاستلام'}')">📤 مشاركة الوجهة</button>`:''}${(rd&&st==1)||(!rd&&st<3)?`<button class="l" onclick="rej('${j.k}','${o.id}')">رفض</button>`:''}</div>
+ <div class="bt">${nv(tg)}<button class="l" onclick="navToggle()">${NAV.on?'⏹ إيقاف الملاحة الصوتية':'🧭 ملاحة صوتية'}</button>${tg?`<button class="l" onclick="shareDest(${tg.lat},${tg.lng},'${rd&&st>=3?'نقطة الوصول':'نقطة الاستلام'}')">📤 مشاركة الوجهة</button>`:''}${(rd&&st==1)||(!rd&&st<3)?`<button class="l" onclick="rej('${j.k}','${o.id}')">رفض</button>`:''}</div>
  ${rd&&st==2&&o.bd?'<div class="mu on" style="margin:4px 0">✔ أكّد الزبون صعوده معك</div>':''}${rd&&st==3&&o.dok?'<div class="mu on" style="margin:4px 0">✔ أكّد الزبون وصوله لوجهته</div>':''}${rd&&st==3&&o.dno&&!o.req?'<div class="mu off" style="margin:4px 0">الزبون لم يؤكد الوصول بعد</div>':''}
  ${!rd&&st==1?`<button class="big" disabled>المطعم يجهّز الطلب… توجّه إليه</button>`:rd&&st==3?`<button class="big" onclick="endRide('${o.id}')">${farEnd(o)?(o.req?'بانتظار تأكيد الزبون… (إعادة الإرسال)':'لم تصل بعد — اطلب تأكيد الزبون'):'إنهاء الرحلة'}</button>`:`<button class="big" onclick="act('${j.k}','${o.id}',{st:${st+1}})">${rd?RST[st]:(st==2?'استلمت من المطعم':'تم التسليم')}</button>`}`}
 /* ---------- المحفظة والسحب ---------- */
@@ -163,6 +168,7 @@ function draw(){
  let dw=$('#dwr');if(!dw){dw=document.createElement('div');dw.id='dwr';document.getElementById('app').appendChild(dw)}
  if(menu){const nw=!dw.firstChild,old=dw.firstChild&&dw.firstChild.firstChild,st0=old?old.scrollTop:0,k=drawer();if(nw||dw._k!==k){dw._k=k;dw.innerHTML=k;if(!nw){dw.firstChild.classList.add('na');const n1=dw.firstChild.firstChild;if(n1)n1.scrollTop=st0}}}else if(dw.firstChild){dw.innerHTML='';dw._k=''}
  const q=$('#rq');if(q)q.onscroll=()=>{clearTimeout(q._t);q._t=setTimeout(()=>{const c=[...q.children],mid=q.getBoundingClientRect().left+q.clientWidth/2;let b=c[0],bd=1e9;c.forEach(x=>{const r=x.getBoundingClientRect(),d=Math.abs(r.left+r.width/2-mid);if(d<bd){bd=d;b=x}});if(b&&b.dataset.i!=sel){sel=b.dataset.i;c.forEach(x=>x.classList.toggle('sel',x==b));mapUpd()}},120)};
+ try{navCheck()}catch(e){}
  mapUpd()}
 setInterval(()=>{try{if(AUTH.pin&&DB.drivers[AUTH.id]&&me().on&&pos&&jobs().mine.length)fetch('/api/set',{method:'POST',headers:H(),body:JSON.stringify({k:'drivers',id:AUTH.id,v:{loc:pos}})}).catch(()=>{})}catch(e){}},4000);
 start(async ch=>{if(AUTH.pin&&me().on&&pos)try{await fetch('/api/set',{method:'POST',headers:H(),body:JSON.stringify({k:'drivers',id:AUTH.id,v:{loc:pos}})})}catch(e){}if(first||(ch&&!busy())){first=0;draw()}});
