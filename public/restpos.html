@@ -284,7 +284,7 @@ function pgSet(){const r=R(),s=rSt(r);return`<div class="sg"><div class="card"><
 /* ---------- الهيكل ---------- */
 const PG={o:['🔔','الطلبات'],m:['🍽️','القائمة'],h:['🧾','السجل'],s:['⚙️','الإعدادات']};
 function draw(){const app=$('#app');
- if(!AUTH.pin||!DB.rests[AUTH.id]){document.title='دخول المطعم';return app.innerHTML=`<div class="lg"><div class="lgc"><div class="logo" style="width:64px;margin:0 0 6px">🍽️</div><h1>دخول جهاز المطعم</h1><p>أدخل رمز المطعم والرمز السري من إدارة التطبيق.</p><input id="li" placeholder="رمز المطعم" value="${esc(AUTH.id||'')}" autocomplete="username"><input id="lp" type="password" placeholder="الرمز السري" autocomplete="current-password"><button class="b pri" data-a="login" style="flex:none">دخول</button></div></div>`}
+ if(!AUTH.pin||!DB.rests[AUTH.id]){document.title='دخول المطعم';return app.innerHTML=`<div class="lg"><div class="lgc"><div class="logo" style="width:64px;margin:0 0 6px">🍽️</div><h1>دخول جهاز المطعم</h1><p>أدخل رمز المطعم والرمز السري من إدارة التطبيق.</p><input id="li" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="رمز المطعم" value="${esc(AUTH.id||'')}" autocomplete="username"><input id="lp" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text" type="password" placeholder="الرمز السري" autocomplete="current-password"><button class="b pri" data-a="login" style="flex:none">دخول</button></div></div>`}
  const sc=[...document.querySelectorAll('.cb')].map(e=>e.scrollTop),ps=$('#pg')?$('#pg').scrollTop:0;
  const r=R(),s=rSt(r),n=nNew(),dn=Object.values(DB.orders||{}).filter(o=>o.st==4&&o.at>=dayStart(0));
  document.title=(n?'🔔 ('+n+') ':'')+(r.n||'')+' — الطلبات';
@@ -295,7 +295,7 @@ function draw(){const app=$('#app');
  document.querySelectorAll('.cb').forEach((e,i)=>e.scrollTop=sc[i]||0);if($('#pg'))$('#pg').scrollTop=ps}
 /* ---------- الأحداث ---------- */
 const A={
- login:async()=>{signin('rest',$('#li').value.trim(),$('#lp').value.trim());if(await load()&&DB.rests[AUTH.id]){ST.on=1;AC();wl();draw()}else{toast('بيانات الدخول غير صحيحة');AUTH.pin='';localStorage[KEY]=JSON.stringify({role:'rest',id:AUTH.id});draw()}},
+ login:async()=>{signin('rest',_en($('#li').value).replace(/\s/g,''),_en($('#lp').value).replace(/\s/g,''));if(await load()&&DB.rests[AUTH.id]){ST.on=1;AC();wl();draw()}else{toast('بيانات الدخول غير صحيحة');AUTH.pin='';localStorage[KEY]=JSON.stringify({role:'rest',id:AUTH.id});draw()}},
  shift:()=>{ST.on=1;AC();ring(1);wl();try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()}catch(e){}draw()},
  nav:p=>{ST.pg=p;draw()},cm:closeM,
  acc:id=>prepSheet(id),prep:(id,m)=>accO(id,m),prepc:id=>{const v=+$('#cpm').value;if(!(v>0))return toast('أدخل عدد الدقائق');accO(id,v)},

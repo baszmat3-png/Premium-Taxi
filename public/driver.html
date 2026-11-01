@@ -136,7 +136,7 @@ function mapUpd(){if(!AUTH.pin||!DB.drivers[AUTH.id]||pg)return;const J=jobs(),a
  const el=$('#dm'),bs=document.querySelector('.bs');el.hidden=0;
  showMap(el,pts,{route,pb:bs?bs.offsetHeight:200,pt:80,onRoute:R=>{const k=JSON.stringify(R.map(r=>r&&[+r.km.toFixed(1),r.min]));if(k==mapK)return;mapK=k;if(a)rt.act=R[0]?{km:R[0].km,min:R[0].min}:null;else if(s&&R[0])rt[s.o.id]={km:R[0].km,min:R[0].min}}})}
 /* ---------- الشاشة الرئيسية ---------- */
-async function lg(){const id=$('#li').value.trim(),pin=$('#lp').value.trim(),c=$('#lc');try{const r=await fetch('/api/driver/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,pin,code:c?c.value.trim():''})}),j=await r.json().catch(()=>({}));
+async function lg(){const id=_en($('#li').value).replace(/\s/g,''),pin=_en($('#lp').value).replace(/\s/g,''),c=$('#lc');try{const r=await fetch('/api/driver/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,pin,code:c?c.value.trim():''})}),j=await r.json().catch(()=>({}));
  if(j.need2fa){if(!$('#lc')){const i=document.createElement('input');i.id='lc';i.placeholder='رمز المصادقة (6 أرقام)';i.inputMode='numeric';i.maxLength=6;$('#lp').after(i);i.focus()}return}
  if(!r.ok||!j.token)return alert(j.e||'بيانات الدخول غير صحيحة');
  signin('driver',id,pin);AUTH.token=j.token;localStorage[KEY]=JSON.stringify(AUTH);if(await load())draw();else{alert('بيانات الدخول غير صحيحة');logout()}}catch(e){alert('تعذر الاتصال بالسيرفر')}}
@@ -148,7 +148,7 @@ async function tfaSetup(){const[o,j]=await tfa('setup');if(!o)return alert(j.e||
  s.querySelector('.go').onclick=async()=>{const[ok,k]=await tfa('enable',s.querySelector('#tc').value);if(!ok)return alert(k.e||'الرمز غير صحيح');AUTH.token=k.token;localStorage[KEY]=JSON.stringify(AUTH);s.remove();await load();draw();alert('تم تفعيل المصادقة الثنائية ✔\nستحتاج الرمز عند كل تسجيل دخول جديد.')};document.body.appendChild(s)}
 async function tfaOff(){const c=prompt('أدخل رمز المصادقة الحالي لإيقاف الحماية');if(!c)return;const[ok,j]=await tfa('disable',c);if(!ok)return alert(j.e||'الرمز غير صحيح');delete AUTH.token;localStorage[KEY]=JSON.stringify(AUTH);await load();draw()}
 function draw(){
- if(!AUTH.pin||!DB.drivers[AUTH.id]){window._lh='';$('#dm').hidden=1;return $('#v').innerHTML='<div style="padding:12vh 20px;max-width:440px;margin:auto"><div style="font-size:60px;text-align:center">🚕</div><h1 style="text-align:center">دخول الكابتن</h1><div class="card"><input id="li" placeholder="رمز الكابتن"><input id="lp" type="password" placeholder="الرمز السري"><button class="big" onclick="lg()">دخول</button></div></div>'}
+ if(!AUTH.pin||!DB.drivers[AUTH.id]){window._lh='';$('#dm').hidden=1;return $('#v').innerHTML='<div style="padding:12vh 20px;max-width:440px;margin:auto"><div style="font-size:60px;text-align:center">🚕</div><h1 style="text-align:center">دخول الكابتن</h1><div class="card"><input id="li" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="رمز الكابتن"><input id="lp" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text" type="password" placeholder="الرمز السري"><button class="big" onclick="lg()">دخول</button></div></div>'}
  const m=me(),bal=m.bal||0,mn=DB.cfg.minBal??-15000,blk=bal<=mn,on=!!m.on&&!blk,J=jobs();
  {const d0=document.getElementById('dwr');if(d0&&(pg||!menu)){d0.innerHTML='';d0._k=''}}
  if(pg){window._lh='';$('#dm').hidden=1;$('#v').innerHTML=`<div class="full"><div>${({wallet:walletPg,earn:earnPg,set:setPg,inc:incPg})[pg]()}</div></div>`;return}
