@@ -1,0 +1,50 @@
+[
+ {
+  "relation": [
+   "delegate_permission/common.handle_all_urls"
+  ],
+  "target": {
+   "namespace": "android_app",
+   "package_name": "com.safra.customer",
+   "sha256_cert_fingerprints": [
+    "ضع_هنا_بصمة_SHA256_من_Play_Console_بعد_رفع_التطبيق"
+   ]
+  }
+ },
+ {
+  "relation": [
+   "delegate_permission/common.handle_all_urls"
+  ],
+  "target": {
+   "namespace": "android_app",
+   "package_name": "com.safra.captain",
+   "sha256_cert_fingerprints": [
+    "ضع_هنا_بصمة_SHA256_من_Play_Console_بعد_رفع_التطبيق"
+   ]
+  }
+ },
+ {
+  "relation": [
+   "delegate_permission/common.handle_all_urls"
+  ],
+  "target": {
+   "namespace": "android_app",
+   "package_name": "com.safra.restaurant",
+   "sha256_cert_fingerprints": [
+    "ضع_هنا_بصمة_SHA256_من_Play_Console_بعد_رفع_التطبيق"
+   ]
+  }
+ },
+ {
+  "relation": [
+   "delegate_permission/common.handle_all_urls"
+  ],
+  "target": {
+   "namespace": "android_app",
+   "package_name": "com.safra.restpos",
+   "sha256_cert_fingerprints": [
+    "ضع_هنا_بصمة_SHA256_من_Play_Console_بعد_رفع_التطبيق"
+   ]
+  }
+ }
+]

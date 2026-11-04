@@ -1,0 +1,35 @@
+{
+ "packageId": "com.safra.customer",
+ "host": "YOUR-DOMAIN.com",
+ "name": "تكسي المتميز",
+ "launcherName": "المتميز",
+ "display": "standalone",
+ "orientation": "portrait",
+ "themeColor": "#0a3dff",
+ "themeColorDark": "#0a3dff",
+ "navigationColor": "#ffffff",
+ "navigationColorDark": "#111827",
+ "backgroundColor": "#ffffff",
+ "startUrl": "/customer.html",
+ "iconUrl": "https://YOUR-DOMAIN.com/icons/icon-512.png",
+ "maskableIconUrl": "https://YOUR-DOMAIN.com/icons/icon-maskable-512.png",
+ "appVersion": "1.0.0",
+ "appVersionCode": 1,
+ "enableNotifications": true,
+ "enableSiteSettingsShortcut": true,
+ "isChromeOSOnly": false,
+ "isMetaQuest": false,
+ "fallbackType": "customtabs",
+ "splashScreenFadeOutDuration": 300,
+ "features": {
+  "locationDelegation": {
+   "enabled": true
+  }
+ },
+ "signingKey": {
+  "path": "./android.keystore",
+  "alias": "android"
+ },
+ "webManifestUrl": "https://YOUR-DOMAIN.com/manifest-customer.webmanifest",
+ "generatorApp": "bubblewrap-cli"
+}

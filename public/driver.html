@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" data-app="driver"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>تكسي المتميز - الكابتن</title>
-<link rel="stylesheet" href="shared.css"><link rel="stylesheet" href="themes.css"><script src="config.js"></script><script src="shared.js"></script><script src="themes.js"></script><script src="nav.js"></script>
+<link rel="stylesheet" href="shared.css"><link rel="stylesheet" href="themes.css"><script src="config.js"></script><script src="pricing.js"></script><script src="shared.js"></script><link rel="manifest" href="/manifest-driver.webmanifest"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"><script src="vmap.js"></script><script src="lines-driver.js"></script><script src="push.js" defer></script><script src="themes.js"></script><script src="nav.js"></script>
 <style>
 [data-app=driver]{--pr:#1f4fff;--pt:#fff;--bg:#f4f6fb}
 @media(prefers-color-scheme:dark){[data-app=driver]{--pr:#7d97ff;--pt:#050a24}}
@@ -149,9 +149,10 @@ async function tfaSetup(){const[o,j]=await tfa('setup');if(!o)return alert(j.e||
 async function tfaOff(){const c=prompt('أدخل رمز المصادقة الحالي لإيقاف الحماية');if(!c)return;const[ok,j]=await tfa('disable',c);if(!ok)return alert(j.e||'الرمز غير صحيح');delete AUTH.token;localStorage[KEY]=JSON.stringify(AUTH);await load();draw()}
 function draw(){
  if(!AUTH.pin||!DB.drivers[AUTH.id]){window._lh='';$('#dm').hidden=1;return $('#v').innerHTML='<div style="padding:12vh 20px;max-width:440px;margin:auto"><div style="font-size:60px;text-align:center">🚕</div><h1 style="text-align:center">دخول الكابتن</h1><div class="card"><input id="li" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="رمز الكابتن"><input id="lp" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text" type="password" placeholder="الرمز السري"><button class="big" onclick="lg()">دخول</button></div></div>'}
+ if(me().type=='line'&&!pg)pg='lines';
  const m=me(),bal=m.bal||0,mn=DB.cfg.minBal??-15000,blk=bal<=mn,on=!!m.on&&!blk,J=jobs();
  {const d0=document.getElementById('dwr');if(d0&&(pg||!menu)){d0.innerHTML='';d0._k=''}}
- if(pg){window._lh='';$('#dm').hidden=1;$('#v').innerHTML=`<div class="full"><div>${({wallet:walletPg,earn:earnPg,set:setPg,inc:incPg})[pg]()}</div></div>`;return}
+ if(pg){window._lh='';$('#dm').hidden=1;$('#v').innerHTML=`<div class="full"><div>${({wallet:walletPg,earn:earnPg,set:setPg,inc:incPg,lines:linesPg})[pg]()}</div></div>`;return}
  const ids=J.av.map(j=>j.o.id);if(known===null)known=new Set(ids);else{const nw=ids.filter(i=>!known.has(i));if(nw.length&&on&&snd&&!J.mine.length)ring(3);ids.forEach(i=>known.add(i))}
  const a=J.mine[0];if(!a&&J.av.length&&!J.av.some(j=>j.o.id==sel))sel=J.av[0].o.id;if(!J.av.length||a)sel=null;
  const nn=J.mine.length;if(window._n!=null&&nn>window._n&&snd)ring(1);window._n=nn;
