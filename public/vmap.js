@@ -44,7 +44,7 @@ function load(){
  return ld=new Promise((ok,no)=>{
   const l=document.createElement('link');l.rel='stylesheet';l.href=CSS;document.head.appendChild(l);
   const js=src=>new Promise((a,b)=>{const s=document.createElement('script');s.src=src;s.onload=a;s.onerror=b;document.head.appendChild(s)});
-  js(JS).then(()=>js(PLG)).then(()=>window.maplibregl&&window.L&&L.maplibreGL?ok():no()).catch(no)})}
+  js(JS).then(()=>js(PLG)).then(()=>window.maplibregl&&window.L&&L.maplibreGL?maplibregl.setRTLTextPlugin(U+'@mapbox/mapbox-gl-rtl-text@0.2.3/mapbox-gl-rtl-text.js',false):Promise.reject()).then(ok).catch(no)})}
 
 (function(){const s=document.createElement('style');s.textContent=
  '.vmn{position:absolute;z-index:900;right:10px;top:50%;transform:translateY(-50%);width:40px;height:40px;min-height:0;padding:0;margin:0;border:0;border-radius:50%;background:#fff;color:#111;box-shadow:0 4px 14px #0004;font-size:19px;line-height:40px;text-align:center;cursor:pointer}'+
