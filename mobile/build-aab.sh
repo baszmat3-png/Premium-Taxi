@@ -25,7 +25,10 @@ JSON
   sed -i -E 's/compileSdkVersion = [0-9]+/compileSdkVersion = 35/; s/targetSdkVersion = [0-9]+/targetSdkVersion = 35/' android/variables.gradle
   G=android/app/build.gradle
   sed -i -E "s/versionCode [0-9]+/versionCode ${VC}/; s/versionName \"[^\"]*\"/versionName \"${VN}\"/" "$G"
-  npx capacitor-assets generate --android --iconBackgroundColor '#ffffff' --splashBackgroundColor '#0b1226' || true
+  node -e "require('sharp')({create:{width:1024,height:1024,channels:3,background:'#ffffff'}}).png().toFile('assets/icon-background.png').catch(()=>process.exit(1))" || true
+  npx capacitor-assets generate --android --splashBackgroundColor '#0b1226' || true
+  # احتياط: إن بقي ملف الأيقونة المتكيّفة يشير إلى خلفية غير موجودة نستعمل لوناً
+  R=android/app/src/main/res; if ! ls $R/mipmap-*/ic_launcher_background.* >/dev/null 2>&1; then mkdir -p $R/values; grep -q ic_launcher_background $R/values/*.xml 2>/dev/null || printf '<?xml version="1.0" encoding="utf-8"?>\n<resources><color name="ic_launcher_background">#FFFFFF</color></resources>\n' > $R/values/ic_launcher_background.xml; sed -i 's#@mipmap/ic_launcher_background#@color/ic_launcher_background#' $R/mipmap-anydpi-v26/*.xml; fi
   if [ "$MODE" = apk ]; then
    (cd android && ./gradlew assembleDebug --no-daemon -q)
    cp "$(find android/app/build/outputs/apk -name '*.apk' | head -1)" "../../../dist/taxi-mutamayyiz-$a.apk"
