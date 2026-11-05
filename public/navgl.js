@@ -1,9 +1,4 @@
-/* الأولوية: اتجاه المسار أمامك (يدور عند كل انعطاف) ← اتجاه الحركة/GPS ← البوصلة */
- const L=line&&line.length?line:S.line,near=L?nearD(p,L):1e9,a=near<60?ahead(p,L):null;S.spd=o.spd||0;EL.add(el);
- if(a&&dm(p,a)>3){S.hd=brg(p,a);S.useC=0}
- else if(typeof o.hd=='number'&&o.hd>=0&&(o.spd>2.5||!o.compass)){S.hd=o.hd;S.useC=0}
- else if(S.pos&&dm(S.pos,p)>6){S.hd=brg(S.pos,p);S.useC=0}
- else if(o.compass){S.useC=1;cmpStart();if(CMP>=0)S.hd=CMP}/* navgl.js — عرض قيادة مثل Waze: خريطة متجهة تدور مع اتجاه السير، مقرّبة على المسار، والسهم في الوسط.
+/* navgl.js — عرض قيادة مثل Waze: خريطة متجهة تدور مع اتجاه السير، مقرّبة على المسار، والسهم في الوسط.
    يعمل فوق خريطة Leaflet داخل نفس العنصر. إذا لم يدعم الجهاز WebGL تبقى خريطة Leaflet كما هي. */
 (function(){
 const NGL=window.NGL={};
@@ -44,8 +39,13 @@ function cam(el,anim){const S=el._ng;if(!S)return;if(S.ar){const H=S.div.clientH
 /* opt: {pos:{lat,lng}, dest:{lat,lng}} */
 NGL.drive=function(el,o,line,pb){if(!window.VMAP||!o||!o.pos)return;let S=el._ng;if(!S||!S.on){mk(el);S=el._ng}
  const p={lat:+o.pos.lat,lng:+o.pos.lng};if(!(p.lat&&p.lng))return;
- if(S.pos&&dm(S.pos,p)>6)S.hd=brg(S.pos,p);else{const a=ahead(p,line||S.line);if(a&&dm(p,a)>3&&(!S.pos||S.first!==1)){S.hd=brg(p,a);S.first=1}}
- S.spd=o.spd||0;S.useC=!!o.compass;if(o.compass)cmpStart();EL.add(el);if(typeof o.hd=='number'&&o.hd>=0&&(o.spd>2.5||!o.compass))S.hd=o.hd;else if(o.compass&&CMP>=0&&!(o.spd>2.5))S.hd=CMP;
+/* الأولوية: اتجاه المسار أمامك (يدور عند كل انعطاف) ← اتجاه الحركة/GPS ← البوصلة */
+ const L=line&&line.length?line:S.line,near=L?nearD(p,L):1e9,a=near<60?ahead(p,L):null;S.spd=o.spd||0;EL.add(el);
+ if(a&&dm(p,a)>3){S.hd=brg(p,a);S.useC=0}
+ else if(typeof o.hd=='number'&&o.hd>=0&&(o.spd>2.5||!o.compass)){S.hd=o.hd;S.useC=0}
+ else if(S.pos&&dm(S.pos,p)>6){S.hd=brg(S.pos,p);S.useC=0}
+ else if(o.compass){S.useC=1;cmpStart();if(CMP>=0)S.hd=CMP}
+
  S.pos=p;if(line&&line.length)S.line=line;if(pb)S.pb=Math.max(160,pb+20);S.bar.style.bottom=(S.pb+46)+'px';
  if(S.g){S.car&&S.car.setLngLat([p.lng,p.lat]).setRotation(S.hd);if(o.dest&&S.dst){S.dst.setLngLat([o.dest.lng,o.dest.lat]);if(!S.dst._map)S.dst.addTo(S.g)}if(S.ready&&line&&line.length){const sr=S.g.getSource('rt');sr&&sr.setData(gj(line))}cam(el,1)}};
 NGL.off=function(el){const S=el&&el._ng;if(!S)return;EL.delete(el);S.on=0;try{S.g&&S.g.remove()}catch(e){}[S.div,S.bar,S.zb,S.ar].forEach(x=>x&&x.remove());el._ng=null};
