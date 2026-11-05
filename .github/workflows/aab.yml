@@ -1,0 +1,25 @@
+name: Build Play Store AAB
+on: {workflow_dispatch: {}, push: {tags: ['v*']}}
+jobs:
+  aab:
+    runs-on: ubuntu-latest
+    strategy: {fail-fast: false, matrix: {app: [customer, captain, restaurant, restpos]}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: 21}
+      - uses: android-actions/setup-android@v3
+      - name: Keystore
+        run: echo "${{ secrets.ANDROID_KEYSTORE_B64 }}" | base64 -d > "$RUNNER_TEMP/upload-key.jks"
+      - name: Build signed AAB
+        run: ./mobile/build-aab.sh ${{ matrix.app }}
+        env:
+          SERVER_URL: ${{ secrets.SERVER_URL || 'https://premium-taxi.onrender.com' }}
+          KS_FILE: ${{ runner.temp }}/upload-key.jks
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASS }}
+          KS_ALIAS: upload
+          VERSION_CODE: ${{ github.run_number }}
+      - uses: actions/upload-artifact@v4
+        with: {name: 'aab-${{ matrix.app }}', path: dist/*.aab}

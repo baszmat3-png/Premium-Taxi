@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# يبني ملف AAB موقّعاً جاهزاً لمتجر Google Play لكل تطبيق
+# Usage: SERVER_URL=https://premium-taxi.onrender.com KS_FILE=upload-key.jks KS_PASS=... KS_ALIAS=upload VERSION_CODE=1 ./build-aab.sh customer captain restaurant restpos
+set -euo pipefail
+: "${SERVER_URL:?set SERVER_URL}"; : "${KS_FILE:?set KS_FILE}"; : "${KS_PASS:?set KS_PASS}"
+KS_ALIAS="${KS_ALIAS:-upload}"; KEY_PASS="${KEY_PASS:-$KS_PASS}"; VC="${VERSION_CODE:-1}"; VN="${VERSION_NAME:-1.0.$VC}"
+cd "$(dirname "$0")"; SERVER_URL="${SERVER_URL%/}"; KS_FILE="$(realpath "$KS_FILE")"
+declare -A ID=([customer]=com.safra.customer [captain]=com.safra.captain [restaurant]=com.safra.restaurant [restpos]=com.safra.restpos [owner]=com.safra.owner [support]=com.safra.support)
+declare -A NAME=([customer]="تكسي المتميز" [captain]="تكسي المتميز كابتن" [restaurant]="تكسي المتميز المطعم" [restpos]="جهاز طلبات المطعم" [owner]="تكسي المتميز المالك" [support]="تكسي المتميز الدعم")
+declare -A PAGE=([customer]=/customer.html [captain]=/driver.html [restaurant]=/rest.html [restpos]=/restpos.html [owner]="/panel.html?r=admin" [support]="/panel.html?r=support")
+APPS=("$@"); [ ${#APPS[@]} -eq 0 ] && APPS=(customer captain restaurant restpos)
+npm install --no-audit --no-fund; mkdir -p ../dist
+for a in "${APPS[@]}"; do
+  W="build/$a"; rm -rf "$W"; mkdir -p "$W/assets"; cp -r www "$W/www"; cp icons/$a.png "$W/assets/icon-only.png"; cp icons/$a.png "$W/assets/icon-foreground.png"; cp icons/$a.png "$W/assets/splash.png"
+  cp package.json "$W/"; ln -s "$PWD/node_modules" "$W/node_modules"; cd "$W"
+  cat > capacitor.config.json <<JSON
+{"appId":"${ID[$a]}","appName":"${NAME[$a]}","webDir":"www","server":{"url":"${SERVER_URL}${PAGE[$a]}","cleartext":false,"androidScheme":"https","allowNavigation":["$(echo "$SERVER_URL" | sed 's#https\?://##')"]},"android":{"allowMixedContent":false}}
+JSON
+  npx cap add android
+  M=android/app/src/main/AndroidManifest.xml
+  P='<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/><uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/><uses-permission android:name="android.permission.POST_NOTIFICATIONS"/><uses-permission android:name="android.permission.VIBRATE"/>'
+  [ "$a" = captain ] && P="$P"'<uses-permission android:name="android.permission.CAMERA"/><uses-permission android:name="android.permission.RECORD_AUDIO"/><uses-feature android:name="android.hardware.camera" android:required="false"/>'
+  sed -i "s#<application#${P}\n<application#" "$M"
+  # أحدث SDK يطلبه المتجر
+  sed -i -E 's/compileSdkVersion = [0-9]+/compileSdkVersion = 35/; s/targetSdkVersion = [0-9]+/targetSdkVersion = 35/' android/variables.gradle
+  G=android/app/build.gradle
+  sed -i -E "s/versionCode [0-9]+/versionCode ${VC}/; s/versionName \"[^\"]*\"/versionName \"${VN}\"/" "$G"
+  npx capacitor-assets generate --android --iconBackgroundColor '#ffffff' --splashBackgroundColor '#0b1226' || true
+  (cd android && ./gradlew bundleRelease --no-daemon -q)
+  AAB=$(find android/app/build/outputs/bundle -name '*.aab' | head -1)
+  jarsigner -sigalg SHA256withRSA -digestalg SHA-256 -keystore "$KS_FILE" -storepass "$KS_PASS" -keypass "$KEY_PASS" "$AAB" "$KS_ALIAS"
+  cp "$AAB" "../../../dist/taxi-mutamayyiz-$a-$VN.aab"
+  cd ../..
+done
+echo "Done: dist/"
