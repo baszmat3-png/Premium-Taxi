@@ -67,14 +67,21 @@ function attach(el,m){
  if(el._vm)return;el._vm=1;
  let ras=null;
  m.eachLayer(x=>{if(x instanceof L.TileLayer&&/openstreetmap/.test(x._url||''))ras=x});
+ /* لا نعرض خريطة OSM الأولية: نخفيها حتى تجهز الخريطة الملونة، ونعيدها فقط إذا فشلت */
+ const bg=isNight()?C.night.bg:C.day.bg;el.style.background=bg;
+ let shown=0;const back=()=>{if(shown)return;shown=1;try{ras&&ras.setOpacity(1)}catch(e){}};
+ try{ras&&ras.setOpacity(0)}catch(e){}
+ const to=setTimeout(back,9000);
  load().then(()=>{
   const gl=L.maplibreGL({style:STYLE,attributionControl:false,interactive:false}).addTo(m),g=gl.getMaplibreMap();
   VM.push(g);
   g.on('style.load',()=>tint(g,isNight()));
-  g.once('load',()=>{if(ras&&m.hasLayer(ras))m.removeLayer(ras)});
-  addUI(el)}).catch(()=>{})}
+  g.once('load',()=>{shown=1;clearTimeout(to);if(ras&&m.hasLayer(ras))m.removeLayer(ras)});
+  g.on('error',e=>{if(!g.loaded()&&e&&e.error&&/style/i.test(String(e.error.message||'')))back()});
+  addUI(el)}).catch(()=>{clearTimeout(to);back()})}
 
 window.VMAP={load,tint,isNight,STYLE,VM};
+try{if(window.WebGLRenderingContext)setTimeout(()=>load().catch(()=>{}),0)}catch(e){}
 /* نلفّ initMap الأصلية: كل الشاشات (زبون/كابتن/لوحة/مطعم) تستفيد تلقائياً */
 const orig=window.initMap;
 if(typeof orig=='function')window.initMap=function(el){const first=!el._m,m=orig.apply(this,arguments);if(first&&m){try{attach(el,m)}catch(e){}}return m};
