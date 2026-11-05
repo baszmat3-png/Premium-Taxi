@@ -3,7 +3,7 @@
 # Usage: SERVER_URL=https://premium-taxi.onrender.com KS_FILE=upload-key.jks KS_PASS=... KS_ALIAS=upload VERSION_CODE=1 ./build-aab.sh customer captain restaurant restpos
 set -euo pipefail
 : "${SERVER_URL:?set SERVER_URL}"; MODE="${MODE:-aab}"; if [ "$MODE" = aab ]; then : "${KS_FILE:?set KS_FILE}"; : "${KS_PASS:?set KS_PASS}"; fi
-KS_ALIAS="${KS_ALIAS:-upload}"; KEY_PASS="${KEY_PASS:-$KS_PASS}"; VC="${VERSION_CODE:-1}"; VN="${VERSION_NAME:-1.0.$VC}"
+KS_ALIAS="${KS_ALIAS:-upload}"; KS_PASS="${KS_PASS:-}"; KS_FILE="${KS_FILE:-}"; KEY_PASS="${KEY_PASS:-$KS_PASS}"; VC="${VERSION_CODE:-1}"; VN="${VERSION_NAME:-1.0.$VC}"
 cd "$(dirname "$0")"; SERVER_URL="${SERVER_URL%/}"; [ "$MODE" = aab ] && KS_FILE="$(realpath "$KS_FILE")"
 declare -A ID=([customer]=com.safra.customer [captain]=com.safra.captain [restaurant]=com.safra.restaurant [restpos]=com.safra.restpos [owner]=com.safra.owner [support]=com.safra.support)
 declare -A NAME=([customer]="تكسي المتميز" [captain]="تكسي المتميز كابتن" [restaurant]="تكسي المتميز المطعم" [restpos]="جهاز طلبات المطعم" [owner]="تكسي المتميز المالك" [support]="تكسي المتميز الدعم")
