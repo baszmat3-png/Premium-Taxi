@@ -1,17 +1,36 @@
 name: Build APKs
-on: {workflow_dispatch: {}, push: {tags: ['v*']}}
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths: ['mobile/**', '.github/workflows/apk.yml']
+permissions: {contents: write}
 jobs:
   apk:
     runs-on: ubuntu-latest
-    strategy: {matrix: {app: [customer, captain, owner, support, restaurant, restpos]}}
+    strategy: {fail-fast: false, matrix: {app: [customer, captain, restaurant, restpos, owner, support]}}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: {node-version: 20}
       - uses: actions/setup-java@v4
-        with: {distribution: temurin, java-version: 17}
+        with: {distribution: temurin, java-version: 21}
       - uses: android-actions/setup-android@v3
-      - run: ./mobile/build-apk.sh ${{ matrix.app }}
-        env: {SERVER_URL: '${{ secrets.SERVER_URL }}'}
+      - run: ./mobile/build-aab.sh ${{ matrix.app }}
+        env: {MODE: apk, SERVER_URL: "${{ secrets.SERVER_URL || 'https://premium-taxi.onrender.com' }}", VERSION_CODE: '${{ github.run_number }}'}
       - uses: actions/upload-artifact@v4
-        with: {name: 'taxi-mutamayyiz-${{ matrix.app }}', path: dist/*.apk}
+        with: {name: 'apk-${{ matrix.app }}', path: dist/*.apk}
+  release:
+    needs: apk
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: {path: out, merge-multiple: true}
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-latest
+          name: 'تطبيقات تكسي المتميز (APK)'
+          body: 'آخر نسخ APK للتثبيت المباشر — بُنيت تلقائياً'
+          make_latest: true
+          files: out/*.apk
