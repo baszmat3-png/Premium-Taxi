@@ -21,8 +21,8 @@ function mk(el){const S=el._ng={on:1,follow:1,hd:0,z:17.6,pb:260};
  const ar=document.createElement('div');ar.className='ngar';ar.innerHTML='<svg width="54" height="54" viewBox="0 0 40 40"><path d="M20 3 L35 35 L20 27 L5 35 Z" fill="#10b981" stroke="#fff" stroke-width="3" stroke-linejoin="round"/></svg>';el.appendChild(ar);S.ar=ar;
  const z=document.createElement('div');z.className='ngz';z.innerHTML='<button aria-label="تكبير">＋</button><button aria-label="تصغير">－</button>';el.appendChild(z);S.zb=z;
  ['click','touchstart','mousedown','dblclick','wheel'].forEach(ev=>{b.addEventListener(ev,e=>e.stopPropagation());z.addEventListener(ev,e=>e.stopPropagation())});
- b.querySelector('.ngf').onclick=()=>{S.follow=1;b.querySelector('.ngf').hidden=true;cam(el,1)};
- b.querySelector('.ngo').onclick=()=>{if(!S.g||!S.line||S.line.length<2)return;S.follow=0;b.querySelector('.ngf').hidden=false;cam(el,0);const bb=new maplibregl.LngLatBounds();S.line.forEach(p=>bb.extend([p[1],p[0]]));S.pos&&bb.extend([S.pos.lng,S.pos.lat]);S.g.fitBounds(bb,{padding:{top:90,bottom:S.pb+40,left:40,right:40},bearing:0,pitch:0,duration:800})};
+ b.querySelector('.ngf').onclick=()=>{clearTimeout(S.rt);S.follow=1;b.querySelector('.ngf').hidden=true;cam(el,1)};
+ b.querySelector('.ngo').onclick=()=>{if(!S.g||!S.line||S.line.length<2)return;S.free?S.free():(S.follow=0);const bb=new maplibregl.LngLatBounds();S.line.forEach(p=>bb.extend([p[1],p[0]]));S.pos&&bb.extend([S.pos.lng,S.pos.lat]);S.g.fitBounds(bb,{padding:{top:120,bottom:S.pb+90,left:50,right:50},bearing:S.hd,pitch:0,maxZoom:16.5,duration:800})};
  z.children[0].onclick=()=>{S.z=Math.min(19.5,S.z+1);S.follow?cam(el,1):S.g&&S.g.zoomIn()};z.children[1].onclick=()=>{S.z=Math.max(12,S.z-1);S.follow?cam(el,1):S.g&&S.g.zoomOut()};
  window.VMAP.load().then(()=>{if(!S.on)return;let g;try{g=S.g=new maplibregl.Map({container:d,style:VMAP.STYLE,center:S.pos?[S.pos.lng,S.pos.lat]:[44.36,33.31],zoom:S.z,pitch:50,bearing:S.hd,attributionControl:false,dragRotate:false,pitchWithRotate:false})}catch(e){return NGL.off(el)}
   g.touchZoomRotate.disableRotation();try{VMAP.VM&&VMAP.VM.push(g)}catch(e){}g.on('error',e=>console.warn('NGL',e&&e.error&&e.error.message));setTimeout(()=>{try{g.resize()}catch(e){}},300);
@@ -32,13 +32,15 @@ function mk(el){const S=el._ng={on:1,follow:1,hd:0,z:17.6,pb:260};
   const ce=document.createElement('div');ce.className='ngcar';ce.innerHTML='<svg width="40" height="40" viewBox="0 0 40 40"><path d="M20 3 L35 35 L20 27 L5 35 Z" fill="#10b981" stroke="#fff" stroke-width="3" stroke-linejoin="round"/></svg>';
   ce.style.visibility='hidden';S.car=new maplibregl.Marker({element:ce,rotationAlignment:'map',pitchAlignment:'map'}).setLngLat(S.pos?[S.pos.lng,S.pos.lat]:[44.36,33.31]).addTo(g);
   const de=document.createElement('div');de.className='ngdst';S.dst=new maplibregl.Marker({element:de}).setLngLat([44.36,33.31]);
-  g.on('dragstart',()=>{S.follow=0;b.querySelector('.ngf').hidden=false;cam(el,0)});
+  const free=()=>{S.follow=0;b.querySelector('.ngf').hidden=false;cam(el,0);clearTimeout(S.rt);S.rt=setTimeout(()=>{if(S.on){S.follow=1;b.querySelector('.ngf').hidden=true;cam(el,1)}},10000)};S.free=free;
+  g.on('dragstart',e=>{if(e&&e.originalEvent)free()});g.on('touchmove',()=>{if(!S.follow){clearTimeout(S.rt);S.rt=setTimeout(()=>{if(S.on){S.follow=1;b.querySelector('.ngf').hidden=true;cam(el,1)}},10000)}});
   if(window.VM_ON_NIGHT)0}).catch(()=>NGL.off(el))}
 const gj=line=>({type:'Feature',properties:{},geometry:{type:'LineString',coordinates:(line||[]).map(p=>[p[1],p[0]])}});
 function cam(el,anim){const S=el._ng;if(!S)return;if(S.ar){const H=S.div.clientHeight,top=Math.round(H*.3),c=top+(H-top-S.pb)/2;S.ar.style.top=c+'px';S.ar.style.opacity=S.follow&&S.g?1:0;if(S.car&&S.car.getElement())S.car.getElement().style.visibility=S.follow?'hidden':'visible'}if(!S.g||!S.pos||!S.follow)return;S.g.easeTo({center:[S.pos.lng,S.pos.lat],bearing:S.hd,zoom:S.z,pitch:50,padding:{top:Math.round(S.div.clientHeight*.3),bottom:S.pb,left:0,right:0},duration:anim==2?250:anim?700:0})}
 /* opt: {pos:{lat,lng}, dest:{lat,lng}} */
 NGL.drive=function(el,o,line,pb){if(!window.VMAP||!o||!o.pos)return;let S=el._ng;if(!S||!S.on){mk(el);S=el._ng}
  const p={lat:+o.pos.lat,lng:+o.pos.lng};if(!(p.lat&&p.lng))return;
+ {const dk=o.dest?(+o.dest.lat).toFixed(4)+','+(+o.dest.lng).toFixed(4):'';if(S.dk!==dk){S.dk=dk;S.follow=1;clearTimeout(S.rt);const fb=S.bar&&S.bar.querySelector('.ngf');fb&&(fb.hidden=true)}}
 /* الأولوية: اتجاه المسار أمامك (يدور عند كل انعطاف) ← اتجاه الحركة/GPS ← البوصلة */
  const L=line&&line.length?line:S.line,near=L?nearD(p,L):1e9,a=near<60?ahead(p,L):null;S.spd=o.spd||0;EL.add(el);
  if(a&&dm(p,a)>3){S.hd=brg(p,a);S.useC=0}
