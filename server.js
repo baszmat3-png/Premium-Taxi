@@ -137,15 +137,15 @@ function view(h){const r=h['x-role'],i=h['x-id'],I=ix();
  if(r=='support')return{...db,customers:clean(db.customers,['devs','sess','att']),rests:rsOf(I),drivers:clean(db.drivers,['pin','tfa','tfaP','tl']),staff:{},exp:{},codes:{},chat:chatV(),cards:clean(db.cards,['cost','v']),cardorders:clean(db.cardorders,['cost']),vars:PV()};
  if(r=='rest'){const os=I.ro[i]||E0,ids=[...new Set(Object.values(os).map(v=>v.did).filter(d=>d&&db.drivers[d]))];return{cfg:pubc(db.cfg),rests:{[i]:db.rests[i]},orders:os,drivers:Object.fromEntries(ids.map(d=>{const x=db.drivers[d];return[d,{id:d,n:x.n,ph:x.ph,car:x.car,loc:x.loc,locAt:x.locAt}]}))}}
  if(r=='driver'){const me=db.drivers[i],dm=me?(()=>{const x={...me};['pin','tfa','tfaP','tl'].forEach(f=>delete x[f]);x.tfaOn=me.tfa?1:0;return x})():undefined;
-  return{cfg:{...db.cfg,vars:PV()},topups:I.dt[i]||E0,tx:I.dx[i]||E0,wd:I.dw[i]||E0,incw:I.di[i]||E0,rests:rsOf(I),orders:clean({...(I.do[i]||E0),...I.pO},['rnote']),rides:clean({...(I.dr[i]||E0),...I.pR},['rnote']),lines:I.ln[i]||E0,lreqs:I.dl[i]||E0,drivers:{[i]:dm}}}
- return{cfg:pubc(db.cfg),rests:rsOf(I),...custParts(i,I),lines:frag('flo',()=>linesPub()),offers:pubOff(),cards:JSON.parse(cardsPub())}}
+  return{lsug:lsOpen(),cfg:{...db.cfg,vars:PV()},topups:I.dt[i]||E0,tx:I.dx[i]||E0,wd:I.dw[i]||E0,incw:I.di[i]||E0,rests:rsOf(I),orders:clean({...(I.do[i]||E0),...I.pO},['rnote']),rides:clean({...(I.dr[i]||E0),...I.pR},['rnote']),lines:I.ln[i]||E0,lreqs:I.dl[i]||E0,drivers:{[i]:dm}}}
+ return{cfg:pubc(db.cfg),rests:rsOf(I),...custParts(i,I),lines:frag('flo',()=>linesPub()),lsug:lsMine(i),offers:pubOff(),cards:JSON.parse(cardsPub())}}
 // نسخة JSON جاهزة: الأجزاء المشتركة (إعدادات/مطاعم/عروض) تُحوَّل لنص مرة واحدة لكل تغيير
 function viewJSON(h){const R=h['x-role'];
  if(R=='driver'){const I=ix(),i=h['x-id'],me=db.drivers[i],J=JSON.stringify;if(!me)return J(view(h));const dm={...me};['pin','tfa','tfaP','tl'].forEach(f=>delete dm[f]);dm.tfaOn=me.tfa?1:0;
-  return'{"cfg":'+frag('dc',()=>J({...db.cfg,vars:PV()}))+',"topups":'+J(I.dt[i]||E0)+',"tx":'+J(I.dx[i]||E0)+',"wd":'+J(I.dw[i]||E0)+',"incw":'+J(I.di[i]||E0)+',"rests":'+frag('fr',()=>J(rsOf(I)))+',"orders":'+J(clean({...(I.do[i]||E0),...I.pO},['rnote']))+',"rides":'+J(clean({...(I.dr[i]||E0),...I.pR},['rnote']))+',"lines":'+J(I.ln[i]||E0)+',"lreqs":'+J(I.dl[i]||E0)+',"drivers":{'+J(i)+':'+J(dm)+'}}'}
+  return'{"cfg":'+frag('dc',()=>J({...db.cfg,vars:PV()}))+',"topups":'+J(I.dt[i]||E0)+',"tx":'+J(I.dx[i]||E0)+',"wd":'+J(I.dw[i]||E0)+',"incw":'+J(I.di[i]||E0)+',"rests":'+frag('fr',()=>J(rsOf(I)))+',"orders":'+J(clean({...(I.do[i]||E0),...I.pO},['rnote']))+',"rides":'+J(clean({...(I.dr[i]||E0),...I.pR},['rnote']))+',"lsug":'+J(lsOpen())+',"lines":'+J(I.ln[i]||E0)+',"lreqs":'+J(I.dl[i]||E0)+',"drivers":{'+J(i)+':'+J(dm)+'}}'}
  if(R!='customer')return JSON.stringify(view(h));
  const I=ix(),p=custParts(h['x-id'],I),J=JSON.stringify;
- return'{"cfg":'+frag('fc',()=>J(pubc(db.cfg)))+',"rests":'+frag('fr',()=>J(rsOf(I)))+',"orders":'+J(p.orders)+',"rides":'+J(p.rides)+',"tickets":'+J(p.tickets)+',"chat":'+J(p.chat)+',"offers":'+frag('fo',()=>J(pubOff()))+',"cards":'+cardsPub()+',"apps":'+J(p.apps)+',"cardorders":'+J(p.cardorders)+',"me":'+J(p.me)+',"ctop":'+J(p.ctop)+',"ctx":'+J(p.ctx)+',"lines":'+frag('fl',()=>J(linesPub()))+',"lreqs":'+J(p.lreqs)+',"drivers":'+J(p.drivers)+'}'}
+ return'{"cfg":'+frag('fc',()=>J(pubc(db.cfg)))+',"rests":'+frag('fr',()=>J(rsOf(I)))+',"orders":'+J(p.orders)+',"rides":'+J(p.rides)+',"tickets":'+J(p.tickets)+',"chat":'+J(p.chat)+',"offers":'+frag('fo',()=>J(pubOff()))+',"cards":'+cardsPub()+',"apps":'+J(p.apps)+',"cardorders":'+J(p.cardorders)+',"me":'+J(p.me)+',"ctop":'+J(p.ctop)+',"ctx":'+J(p.ctx)+',"lsug":'+J(lsMine(h['x-id']))+',"lines":'+frag('fl',()=>J(linesPub()))+',"lreqs":'+J(p.lreqs)+',"drivers":'+J(p.drivers)+'}'}
 const VC=new Map();setInterval(()=>{for(const[k,e]of VC)if(e.m!==MUT)VC.delete(k)},3e4).unref();
 const inm=(q,t)=>String(q.headers['if-none-match']||'').split(',').some(x=>x.trim().replace(/^W\//,'')===t);
 function sendView(q,s){const h=q.headers,key=h['x-role']+'|'+(h['x-id']||''),now=Date.now();let e=VC.get(key);
@@ -248,6 +248,8 @@ function cleanLine(v,old){const n={},has=f=>f in v,tm=x=>/^\d{2}:\d{2}$/.test(St
  if(has('note'))n.note=S(v.note,300);
  if(has('on'))n.on=v.on?1:0;
  return n}
+const lsOpen=()=>Object.values(db.lsug||{}).filter(x=>x.st==0&&Date.now()-x.at<60*864e5).sort((a,b)=>b.at-a.at).slice(0,200).map(x=>({id:x.id,fa:x.fa,ta:x.ta,tm:x.tm,seats:x.seats,days:x.days,note:x.note,at:x.at,n:x.n||1}));
+const lsMine=i=>Object.fromEntries(Object.values(db.lsug||{}).filter(x=>x.cid==i).map(x=>[x.id,x]));
 function setLine(h,k,id,v,old){const r=h['x-role'],i=h['x-id'];if(!/^[A-Za-z0-9_-]{1,40}$/.test(String(id)))return 0;
  if(k=='lines'){
   if(r=='admin'){if(v==null){if(!old)return 0;for(const x of Object.values(db.lreqs))if(x.lid==id&&x.st>=0&&x.st<2)x.st=-2;delete db.lines[id];CV++;audit(h,'line-del',id);return 1}
@@ -526,6 +528,11 @@ const SRV=http.createServer((q,s)=>{
   j(400,{e:'طلب غير صالح'})}catch(e){j(400,{e:'طلب غير صالح'})}});return}
  if(u=='/api/stream'){if(SSE.size>=Math.max(0,+VAR('maxSSE',20000)||0)){s.writeHead(204);return s.end()}s.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive','X-Accel-Buffering':'no'});s.write('retry:1500\n\ndata:'+VER+'\n\n');SSE.add(s);q.on('close',()=>SSE.delete(s));return}
  if(u=='/api/codes'&&q.method=='POST'){let b='';q.on('data',c=>{b+=c;if(b.length>4e6)q.destroy()});q.on('end',()=>{try{const h=q.headers;if(h['x-role']!='admin'||!ok(h))return j(403,{});const bb=JSON.parse(b),r=codesOp(h,bb);if(r.ok&&bb.op!='list'&&bb.op!='summary'){save();bump()}return j(r.e?400:200,r)}catch(e){j(400,{e:'طلب غير صالح'})}});return}
+ if(u=='/api/lsug'&&q.method=='POST'){let b='';q.on('data',c=>{b+=c;if(b.length>4e3)q.destroy()});q.on('end',()=>{try{const h=q.headers,r=h['x-role'],i=h['x-id'];if(!ok(h))return j(401,{e:'سجّل الدخول'});const bb=JSON.parse(b);db.lsug=db.lsug||{};
+  if(bb.op=='add'&&r=='customer'){const fa=S(bb.fa,80).trim(),ta=S(bb.ta,80).trim();if(!fa||!ta)return j(400,{e:'أدخل منطقة الانطلاق والوجهة'});if(Object.values(db.lsug).filter(x=>x.cid==i&&x.st==0).length>=5)return j(400,{e:'لديك 5 طلبات مفتوحة'});const c=db.customers[i]||{},id='s'+Date.now().toString(36)+cr.randomBytes(2).toString('hex');
+   const same=Object.values(db.lsug).find(x=>x.st==0&&x.fa==fa&&x.ta==ta&&x.tm==S(bb.tm,20));db.lsug[id]={id,cid:i,cn:S(c.n,60),cp:S(c.ph||c.phone,20),fa,ta,tm:S(bb.tm,20),seats:Math.min(11,Math.max(1,Math.round(+bb.seats)||1)),days:S(bb.days,60),note:S(bb.note,200),st:0,at:Date.now()};if(same)same.n=(same.n||1)+1;save();bump();return j(200,{ok:1})}
+  if(bb.op=='close'){const x=db.lsug[S(bb.id,40)];if(!x||!(r=='admin'||(r=='customer'&&x.cid==i)))return j(403,{});x.st=r=='admin'?2:-1;save();bump();return j(200,{ok:1})}
+  return j(400,{e:'عملية غير معروفة'})}catch(e){j(400,{e:'طلب غير صالح'})}});return}
  if(u=='/api/pay/start'&&q.method=='POST'){let b='';q.on('data',c=>{b+=c;if(b.length>2e3)q.destroy()});q.on('end',()=>{try{const h=q.headers;if(h['x-role']!='customer'||!ok(h))return j(401,{e:'سجّل الدخول'});const bb=JSON.parse(b),m=bb.m=='zain'?'zc':'mc',g=db.cfg.gw||{};if(!g[m])return j(400,{e:'الدفع الإلكتروني غير مفعّل'});
   /* نقطة ربط البوابة لاحقاً: عيّن PAY_MC_URL أو PAY_ZC_URL (رابط صفحة الدفع لدى البوابة) وطبّق التحقق عبر webhook */
   const base=process.env[m=='zc'?'PAY_ZC_URL':'PAY_MC_URL'];if(!base)return j(501,{e:'بوابة الدفع لم تُربط بعد — استخدم التحويل اليدوي'});const amt=Math.round(+bb.amt)||0;if(amt<1000||amt>5e6)return j(400,{e:'مبلغ غير صالح'});const ref='p'+Date.now().toString(36)+cr.randomBytes(3).toString('hex');db.pays=db.pays||{};db.pays[ref]={ref,cid:h['x-id'],m,amt,st:0,at:Date.now()};save();return j(200,{url:base+(base.includes('?')?'&':'?')+'ref='+ref+'&amount='+amt})}catch(e){j(400,{e:'طلب غير صالح'})}});return}
