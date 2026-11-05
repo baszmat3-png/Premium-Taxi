@@ -43,7 +43,12 @@ function backupNow(kind){try{fs.mkdirSync(BKD,{recursive:true});const t=Date.now
 setTimeout(()=>{let lastDay='',lastH=-1;const tick=()=>{const d=new Date(Date.now()+3*36e5),day=d.toISOString().slice(0,10),h=d.getUTCHours();if(!bkList().some(x=>x.n.includes(day)&&x.n.includes('-daily'))&&day!==lastDay){lastDay=day;backupNow('daily')}else if(h!==lastH){if(lastH!==-1)backupNow('hourly');}lastH=h};tick();setInterval(tick,5*6e4).unref()},15e3).unref();
 for(const sg of ['SIGTERM','SIGINT'])process.on(sg,()=>{try{DBS.flush(1);AUS.flush(1)}catch(e){}process.exit(0)});
 const nph=x=>{let p=String(x||'').replace(/\D/g,'');if(p.startsWith('00'))p=p.slice(2);if(p.startsWith('0'))p='964'+p.slice(1);return/^\d{10,15}$/.test(p)?p:''};
-async function sendWA(p,c){const m='رمز دخولك إلى تكسي المتميز: '+c;if(!WAU){console.log('[OTP]',p,c);return 1}try{const r=await fetch(WAU,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+WAK,apikey:WAK},body:JSON.stringify({to:p,number:p,phone:p,message:m,text:m})});return r.ok}catch(e){return 0}}
+/* إرسال رمز واتساب. يكفي WA_API_KEY وحده (افتراضياً WaSender API)، أو حدّد WA_API_URL لمزوّد آخر */
+async function sendWA(p,c){const m='رمز دخولك إلى تكسي المتميز: '+c+'\nلا تشارك هذا الرمز مع أي شخص.',U=WAU||(WAK?'https://www.wasenderapi.com/api/send-message':'');
+ if(!U){console.log('[OTP] لا يوجد WA_API_KEY — الرمز لم يُرسل:',p,c);return 0}
+ const d=String(p).replace(/\D/g,''),to='+'+d;
+ try{const r=await fetch(U,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json',Authorization:'Bearer '+WAK,apikey:WAK,'x-api-key':WAK},body:JSON.stringify({to,number:d,phone:d,message:m,text:m}),signal:AbortSignal.timeout(15000)});const t=await r.text().catch(()=>'');
+  if(!r.ok||/"success"\s*:\s*false|"status"\s*:\s*"?(error|failed)/i.test(t)){console.error('[WA] فشل الإرسال',r.status,t.slice(0,300));return 0}console.log('[WA] أُرسل الرمز إلى',to.slice(0,6)+'****');return 1}catch(e){console.error('[WA] خطأ اتصال',e.message);return 0}}
 
 // ---- حماية الأجهزة / VPN / الوقت ----
 const HOPS=process.env.TRUST_PROXY_HOPS==null?1:Math.max(0,+process.env.TRUST_PROXY_HOPS||0),PCK=process.env.PROXYCHECK_KEY||'',DEVTTL=30*864e5;
