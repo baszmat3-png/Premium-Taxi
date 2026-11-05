@@ -53,3 +53,5 @@ NGL.drive=function(el,o,line,pb){if(!window.VMAP||!o||!o.pos)return;let S=el._ng
 NGL.off=function(el){const S=el&&el._ng;if(!S)return;EL.delete(el);S.on=0;try{S.g&&S.g.remove()}catch(e){}[S.div,S.bar,S.zb,S.ar].forEach(x=>x&&x.remove());el._ng=null};
 NGL.active=el=>!!(el&&el._ng&&el._ng.on);
 })();
+
+(function(){const s=document.createElement('style');s.textContent='body:has(.ngl) #nvz{display:none!important}';document.head.appendChild(s)})();
