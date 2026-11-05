@@ -2,15 +2,19 @@ name: Build Play Store AAB
 on: {workflow_dispatch: {}, push: {tags: ['v*']}}
 jobs:
   aab:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy: {fail-fast: false, matrix: {app: [customer, captain, restaurant, restpos]}}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: {node-version: 20}
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: {node-version: 22}
+      - uses: actions/setup-java@v5
         with: {distribution: temurin, java-version: 21}
-      - uses: android-actions/setup-android@v3
+      - name: Android SDK
+        run: |
+          echo "ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> $GITHUB_ENV
+          yes | "${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
       - name: Keystore
         run: echo "${{ secrets.ANDROID_KEYSTORE_B64 }}" | base64 -d > "$RUNNER_TEMP/upload-key.jks"
       - name: Build signed AAB
