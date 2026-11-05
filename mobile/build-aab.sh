@@ -9,7 +9,7 @@ declare -A ID=([customer]=com.safra.customer [captain]=com.safra.captain [restau
 declare -A NAME=([customer]="تكسي المتميز" [captain]="تكسي المتميز كابتن" [restaurant]="تكسي المتميز المطعم" [restpos]="جهاز طلبات المطعم" [owner]="تكسي المتميز المالك" [support]="تكسي المتميز الدعم")
 declare -A PAGE=([customer]=/customer.html [captain]=/driver.html [restaurant]=/rest.html [restpos]=/restpos.html [owner]="/panel.html?r=admin" [support]="/panel.html?r=support")
 APPS=("$@"); [ ${#APPS[@]} -eq 0 ] && APPS=(customer captain restaurant restpos)
-npm install --no-audit --no-fund; mkdir -p ../dist
+npm install --no-audit --no-fund --legacy-peer-deps; mkdir -p ../dist
 for a in "${APPS[@]}"; do
   W="build/$a"; rm -rf "$W"; mkdir -p "$W/assets"; cp -r www "$W/www"; cp icons/$a.png "$W/assets/icon-only.png"; cp icons/$a.png "$W/assets/icon-foreground.png"; cp icons/$a.png "$W/assets/splash.png"
   cp package.json "$W/"; ln -s "$PWD/node_modules" "$W/node_modules"; cd "$W"

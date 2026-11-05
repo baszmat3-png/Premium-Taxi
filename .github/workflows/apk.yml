@@ -20,8 +20,12 @@ jobs:
           echo "ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> $GITHUB_ENV
           yes | "${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
-      - run: ./mobile/build-aab.sh ${{ matrix.app }}
+      - run: set -o pipefail; ./mobile/build-aab.sh ${{ matrix.app }} 2>&1 | tee build-${{ matrix.app }}.log
         env: {MODE: apk, SERVER_URL: "${{ secrets.SERVER_URL || 'https://premium-taxi.onrender.com' }}", VERSION_CODE: '${{ github.run_number }}'}
+      - name: Publish log on failure
+        if: failure()
+        run: tail -c 60000 build-${{ matrix.app }}.log > log-${{ matrix.app }}.txt; gh release upload apk-latest log-${{ matrix.app }}.txt --clobber -R ${{ github.repository }} || true
+        env: {GH_TOKEN: '${{ github.token }}'}
       - uses: actions/upload-artifact@v4
         with: {name: 'apk-${{ matrix.app }}', path: dist/*.apk}
   release:
