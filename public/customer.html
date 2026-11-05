@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" data-app="customer"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>تكسي المتميز - طعام وتكسي</title>
-<link rel="stylesheet" href="shared.css"><link rel="stylesheet" href="themes.css"><script src="config.js"></script><script src="pricing.js"></script><script src="shared.js"></script><script src="ridechat.js" defer></script><link rel="manifest" href="/manifest-customer.webmanifest"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"><script src="vmap.js"></script><script src="lines-customer.js"></script><script src="push.js" defer></script><script src="themes.js"></script><style>
+<link rel="stylesheet" href="shared.css"><link rel="stylesheet" href="themes.css"><script src="config.js"></script><script src="pricing.js"></script><script src="shared.js"></script><script src="ridechat.js" defer></script><link rel="manifest" href="/manifest-customer.webmanifest"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"><script src="vmap.js"></script><script src="navgl.js"></script><script src="lines-customer.js"></script><script src="push.js" defer></script><script src="themes.js"></script><style>
 .gbtn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#1f1f1f;border:1px solid #dadce0;border-radius:999px;padding:14px;font-weight:700;font-size:16px;font-family:inherit;margin:12px 0 4px;cursor:pointer}.gbtn:active{opacity:.85}
 [data-app=customer]{--pr:#1f4fff;--pt:#fff}@media(prefers-color-scheme:dark){[data-app=customer]{--pr:#7d97ff;--pt:#050a24}}
 [data-app=customer] .tb{display:none}
@@ -183,7 +183,7 @@ function txMap(ch,ar,dn){const M=$('#tmap'),s=T.step,pb=()=>$('#ts').offsetHeigh
  else{if(T.ms!=s||ar||s=='opts')pinMode(M,null);T.ms=s;if(s!='ride')setEta(M,'');
   if(s=='dest')showMap(M,[{p:T.a,l:'أ'}],{pb:pb()});
   else if(s=='opts'||s=='search')showMap(M,[{p:(ar?ar.from:T.a),l:'أ'},{p:(ar?ar.to:T.b),l:'ب'}],{route:1,pb:pb(),onRoute:R=>{if(s!='opts')return;if(!R[0]){if(!T.fe){T.fe=1;toast('للأسف، لا يمكن حساب تكلفة هذه الرحلة.','er')}return}T.fe=0;const k=R[0].km.toFixed(2);if(T.rk==k)return;T.rk=k;T.rte={km:R[0].km,min:R[0].min};if(T.step=='opts'&&!busy())txSheet()}});
-  else if(s=='ride'){const d=DB.drivers[ar.did]||{},tg=ar.st<3?ar.from:ar.to;if(ch||M._rid!=ar.id){M._rid=ar.id;M._free=0;M._fz=17;M._onFree=()=>{$('#trc').hidden=0}}showMap(M,[{p:d.loc,l:'ك'},{p:tg,l:ar.st<3?'أ':'ب'}],{route:1,follow:!!d.loc,pb:pb(),onRoute:R=>setEta(M,R[0]?(ar.st<3?'🟠 الانطلاق • ':'🟦 الوصول • ')+etaTxt(R[0].min)+' • '+R[0].km.toFixed(1)+' كم':'')})}
+  else if(s=='ride'){const d=DB.drivers[ar.did]||{},tg=ar.st<3?ar.from:ar.to;if(ch||M._rid!=ar.id){M._rid=ar.id;M._free=0;M._fz=17;M._onFree=()=>{$('#trc').hidden=0}}showMap(M,[{p:d.loc,l:'ك'},{p:tg,l:ar.st<3?'أ':'ب'}],{route:1,follow:!!d.loc,drive:d.loc&&!T.rx?{pos:d.loc,dest:tg,hd:d.hd}:null,pb:pb(),onRoute:R=>setEta(M,R[0]?(ar.st<3?'🟠 الانطلاق • ':'🟦 الوصول • ')+etaTxt(R[0].min)+' • '+R[0].km.toFixed(1)+' كم':'')})}
   else if(s=='done')showMap(M,[{p:dn.from,l:'أ'},{p:dn.to,l:'ب'}],{route:1,pb:pb()})}}
 function sPick(){return `<i class="grip up"></i><div class="srch" onclick="T.sf='a';T.step='dest';T.focus='aq';T.ms='';txDraw()" style="cursor:pointer"><span class="o"></span><div class="g" id="aa" style="font-weight:700">${esc(T.aa||'جارٍ تحديد الموقع…')}</div><svg class="sri" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></div><div class="sdv"></div><button class="big" onclick="okPick()">تأكيد نقطة الانطلاق</button>`}
 function okPick(){if(!T.a)return alert('حدد نقطة الانطلاق');if(!T.aa)T.aa='نقطة الانطلاق';T.step='dest';T.q='';T.qs='';T.sf='b';T.focus='dq';txDraw()}
@@ -215,8 +215,8 @@ function sSearch(){const r=myRide();if(T.rm)return `<i class="grip" onclick="rmT
 async function rush(){const r=myRide();if(!r||(r.tip||0)>=1500)return;await set('rides',r.id,{cid:CID,fare:r.fare+500,tip:(r.tip||0)+500});txDraw()}
 const cxInfo=r=>{const C=(DB.me||{}).cx||{sec:100,fee:1000,on:1},ta=+r.aat||+r.t1||0,left=ta?C.sec-(Date.now()-ta)/1000:C.sec;return{C,left,fee:C.on&&C.fee>0&&left<=0?C.fee:0}};
 const cxLbl=r=>{const x=cxInfo(r);return x.C.on&&x.C.fee>0?(x.left>0?'إلغاء الرحلة · مجاني '+Math.ceil(x.left)+' ث':'إلغاء الرحلة · غرامة '+fm(x.C.fee)):'إلغاء الرحلة'};
-function tzm(d){const M=$('#tmap'),m=M&&M._m;if(!m)return;M._fz=Math.max(12,Math.min(19,(M._free?m.getZoom():(M._fz||17))+d));if(M._free)m.setZoom(M._fz);else txDraw()}
-function trec(){const M=$('#tmap');M._free=0;M._fz=17;$('#trc').hidden=1;txDraw()}
+function tzm(d){{const M=$('#tmap'),S=M&&M._ng;if(S&&S.g){S.z=Math.max(12,Math.min(19.5,S.z+d));S.follow?NGL.drive(M,{pos:S.pos},S.line,0):(d>0?S.g.zoomIn():S.g.zoomOut());return}}const M=$('#tmap'),m=M&&M._m;if(!m)return;M._fz=Math.max(12,Math.min(19,(M._free?m.getZoom():(M._fz||17))+d));if(M._free)m.setZoom(M._fz);else txDraw()}
+function trec(){{const M=$('#tmap'),S=M&&M._ng;if(S&&S.g){S.follow=1;NGL.drive(M,{pos:S.pos},S.line,0);return}}const M=$('#tmap');M._free=0;M._fz=17;$('#trc').hidden=1;txDraw()}
 function rxT(){T.rx=!T.rx;T.rm=0;txDraw()}
 function rmT(){T.rm=!T.rm;T.rx=0;txDraw()}
 function sRide(){const r=myRide(),d=DB.drivers[r.did]||{},e=eta(d.loc,r.st<3?r.from:r.to),tx=r.st==1?`الكابتن في الطريق إليك${e?' • '+e.min+' دقيقة':''}`:r.st==2?'الكابتن وصل إلى نقطتك':'أنت الآن في الرحلة',x=T.rx,ci=cxInfo(r),can=r.st>=1&&r.st<3;

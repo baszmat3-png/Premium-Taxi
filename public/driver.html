@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" data-app="driver"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>تكسي المتميز - الكابتن</title>
-<link rel="stylesheet" href="shared.css"><link rel="stylesheet" href="themes.css"><script src="config.js"></script><script src="pricing.js"></script><script src="shared.js"></script><script src="ridechat.js" defer></script><link rel="manifest" href="/manifest-driver.webmanifest"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"><script src="vmap.js"></script><script src="lines-driver.js"></script><script src="push.js" defer></script><script src="themes.js"></script><script src="nav.js"></script>
+<link rel="stylesheet" href="shared.css"><link rel="stylesheet" href="themes.css"><script src="config.js"></script><script src="pricing.js"></script><script src="shared.js"></script><script src="ridechat.js" defer></script><link rel="manifest" href="/manifest-driver.webmanifest"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"><script src="vmap.js"></script><script src="navgl.js"></script><script src="lines-driver.js"></script><script src="push.js" defer></script><script src="themes.js"></script><script src="nav.js"></script>
 <style>
 [data-app=driver]{--pr:#1f4fff;--pt:#fff;--bg:#f4f6fb}
 @media(prefers-color-scheme:dark){[data-app=driver]{--pr:#7d97ff;--pt:#050a24}}
@@ -37,7 +37,7 @@ body{padding:0;overflow:hidden;background:var(--bg)}[data-app=driver] .tb{displa
 <script>
 auth('driver');
 let dmin=0,pos=null,first=1,sel=null,skip={},menu=0,pg='',known=null,wv={a:'',m:'زين كاش',n:'',w:''},wimg='',snd=localStorage.dsnd!=='0',rt={},pv={},mapK='';
-navigator.geolocation&&navigator.geolocation.watchPosition(p=>{pos={lat:p.coords.latitude,lng:p.coords.longitude};if(AUTH.pin&&DB.drivers[AUTH.id]){mapUpd();try{navTick(p.coords)}catch(e){}}},()=>{},{enableHighAccuracy:true,maximumAge:5000});
+navigator.geolocation&&navigator.geolocation.watchPosition(p=>{pos={lat:p.coords.latitude,lng:p.coords.longitude};window.PHD=p.coords.heading;window.PSP=p.coords.speed;if(AUTH.pin&&DB.drivers[AUTH.id]){mapUpd();try{navTick(p.coords)}catch(e){}}},()=>{},{enableHighAccuracy:true,maximumAge:5000});
 const me=()=>DB.drivers[AUTH.id]||{},MIN=()=>DB.cfg.minWd||25000,tod=t=>new Date(t).toDateString()==new Date().toDateString();
 const nv=p=>p?`<a class="btn" style="flex:1" target="_blank" href="${nav(p)}">🧭 ملاحة</a>`:'';
 const rej=(k,id)=>{const o=(k=='orders'?DB.orders:DB.rides)[id];confirm('رفض الطلب؟ سيُحوَّل لأقرب كابتن آخر.'+(k=='orders'&&+DB.cfg.rejFee>0?'\n⚠️ ستُخصم غرامة رفض '+fmt(+DB.cfg.rejFee)+' من محفظتك.':''))&&act(k,id,{did:null,rej:[...(o.rej||[]),AUTH.id],...(k=='rides'?{st:0}:{})})};
@@ -141,7 +141,7 @@ function mapUpd(){if(!AUTH.pin||!DB.drivers[AUTH.id]||pg)return;const J=jobs(),a
  else if(s){pts.push({p:P1(s),l:s.k=='rides'?'أ':'م'},{p:P2(s),l:s.k=='rides'?'ب':'ز'});route=1}
  if(!pts.some(x=>x.p))pts=[{p:BG,l:'ك'}];
  const el=$('#dm'),bs=document.querySelector('.bs');el.hidden=0;
- showMap(el,pts,{route,pb:bs?bs.offsetHeight:200,pt:80,onRoute:R=>{const k=JSON.stringify(R.map(r=>r&&[+r.km.toFixed(1),r.min]));if(k==mapK)return;mapK=k;if(a)rt.act=R[0]?{km:R[0].km,min:R[0].min}:null;else if(s&&R[0])rt[s.o.id]={km:R[0].km,min:R[0].min}}})}
+ showMap(el,pts,{route,drive:a&&pos&&pts[1]&&pts[1].p?{pos,dest:pts[1].p,hd:window.PHD,spd:window.PSP,compass:1}:null,pb:bs?bs.offsetHeight:200,pt:80,onRoute:R=>{const k=JSON.stringify(R.map(r=>r&&[+r.km.toFixed(1),r.min]));if(k==mapK)return;mapK=k;if(a)rt.act=R[0]?{km:R[0].km,min:R[0].min}:null;else if(s&&R[0])rt[s.o.id]={km:R[0].km,min:R[0].min}}})}
 /* ---------- الشاشة الرئيسية ---------- */
 async function lg(){const id=_en($('#li').value).replace(/\s/g,''),pin=_en($('#lp').value).replace(/\s/g,''),c=$('#lc');try{const r=await fetch('/api/driver/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,pin,code:c?c.value.trim():''})}),j=await r.json().catch(()=>({}));
  if(j.need2fa){if(!$('#lc')){const i=document.createElement('input');i.id='lc';i.placeholder='رمز المصادقة (6 أرقام)';i.inputMode='numeric';i.maxLength=6;$('#lp').after(i);i.focus()}return}
@@ -179,6 +179,6 @@ function draw(){
  try{navCheck()}catch(e){}
  try{mapBtn()}catch(e){}
  mapUpd()}
-setInterval(()=>{try{if(AUTH.pin&&DB.drivers[AUTH.id]&&me().on&&pos&&jobs().mine.length)fetch('/api/set',{method:'POST',headers:H(),body:JSON.stringify({k:'drivers',id:AUTH.id,v:{loc:pos}})}).catch(()=>{})}catch(e){}},4000);
-start(async ch=>{if(AUTH.pin&&me().on&&pos)try{await fetch('/api/set',{method:'POST',headers:H(),body:JSON.stringify({k:'drivers',id:AUTH.id,v:{loc:pos}})})}catch(e){}if(first||(ch&&!busy())){first=0;draw()}});
+setInterval(()=>{try{if(AUTH.pin&&DB.drivers[AUTH.id]&&me().on&&pos&&jobs().mine.length)fetch('/api/set',{method:'POST',headers:H(),body:JSON.stringify({k:'drivers',id:AUTH.id,v:{loc:pos,hd:window.NGL?NGL.heading():-1}})}).catch(()=>{})}catch(e){}},4000);
+start(async ch=>{if(AUTH.pin&&me().on&&pos)try{await fetch('/api/set',{method:'POST',headers:H(),body:JSON.stringify({k:'drivers',id:AUTH.id,v:{loc:pos,hd:window.NGL?NGL.heading():-1}})})}catch(e){}if(first||(ch&&!busy())){first=0;draw()}});
 </script></body></html>
