@@ -74,7 +74,7 @@ function attach(el,m){
   g.once('load',()=>{if(ras&&m.hasLayer(ras))m.removeLayer(ras)});
   addUI(el)}).catch(()=>{})}
 
-window.VMAP={load,tint,isNight,STYLE};
+window.VMAP={load,tint,isNight,STYLE,VM};
 /* نلفّ initMap الأصلية: كل الشاشات (زبون/كابتن/لوحة/مطعم) تستفيد تلقائياً */
 const orig=window.initMap;
 if(typeof orig=='function')window.initMap=function(el){const first=!el._m,m=orig.apply(this,arguments);if(first&&m){try{attach(el,m)}catch(e){}}return m};
