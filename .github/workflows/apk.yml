@@ -43,3 +43,6 @@ jobs:
           make_latest: true
           files: out/*.apk
           fail_on_unmatched_files: false
+      - name: Remove old failure logs
+        run: for a in customer captain restaurant restpos owner support; do gh release delete-asset apk-latest log-$a.txt -y -R ${{ github.repository }} || true; done
+        env: {GH_TOKEN: '${{ github.token }}'}
