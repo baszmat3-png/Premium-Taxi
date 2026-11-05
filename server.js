@@ -277,6 +277,7 @@ function setLine(h,k,id,v,old){const r=h['x-role'],i=h['x-id'];if(!/^[A-Za-z0-9_
 function set(h,b){const{k,id}=b;let v=b.v;const r=h['x-role'],i=h['x-id'];
  if(!W[r]||!W[r].includes(k)||!id)return 0;
  const old=db[k]&&db[k][id],mn=db.cfg.minBal;if(k=='lines'||k=='lreqs')return setLine(h,k,id,v,old);
+ if((k=='rides'||k=='orders')&&old&&v&&'msg' in v){const me=r=='customer'&&old.cid==i?'c':r=='driver'&&old.did==i?'d':null;if(!me||!old.did||!(old.st>=1&&old.st<4))return 0;const t=String(v.msg||'').trim().slice(0,400);if(!t)return 0;if((old.cm||[]).length>=150)return 0;old.cm=(old.cm||[]).concat({f:me,t,at:Date.now()});try{PUSH&&PUSH.send&&0}catch(e){}return 1}
  if(k=='cdev'){if(r!='admin'||!v)return 0;const c=db.customers[id];if(!c)return 0;c.devs=c.devs||{};const x=c.devs[S(v.dev,64)];
   if(v.a=='reset'){Object.values(c.devs).forEach(y=>{if(!y.st)y.st=2});AU.rev[id]=Date.now();saveA();audit(h,'cdev-reset',id);return 1}
   if(v.a=='unban'){delete c.ban;c.ab=[];if(db.banDev)for(const d of Object.keys(c.devs))delete db.banDev[d];audit(h,'ab-unban',id);CV++;return 1}if(!x)return 0;if(v.a=='rm'){x.st=2;audit(h,'cdev-rm',id);return 1}if(v.a=='block'){x.st=1;audit(h,'cdev-block',id);return 1}if(v.a=='unblock'){x.st=2;audit(h,'cdev-unblock',id);return 1}return 0}

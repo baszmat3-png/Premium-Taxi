@@ -1,0 +1,22 @@
+/* دردشة الزبون والكابتن داخل الرحلة/الطلب */
+(function(){
+const RC=window.RC={k:null,id:null,me:null,n:-1};
+const seenK=(k,id)=>'rcs_'+k+'_'+id;
+const get=()=>RC.k&&window.DB&&DB[RC.k]&&DB[RC.k][RC.id];
+RC.unread=function(k,id,me){const o=DB[k]&&DB[k][id];if(!o||!o.cm)return 0;let s=0;try{s=+localStorage.getItem(seenK(k,id))||0}catch(e){}return o.cm.filter(m=>m.f!=me&&m.at>s).length};
+RC.badge=function(k,id,me){const n=RC.unread(k,id,me);return n?`<span style="background:#e11;color:#fff;border-radius:99px;padding:0 7px;font-size:12px;margin-inline-start:6px">${n}</span>`:''};
+RC.open=function(k,id,me){RC.k=k;RC.id=id;RC.me=me;RC.n=-1;let w=document.getElementById('rcw');if(!w){w=document.createElement('div');w.id='rcw';w.innerHTML=`<div class="rcb"><div class="rch"><b>💬 المحادثة</b><button onclick="RC.close()" aria-label="إغلاق">✕</button></div><div id="rcl"></div><div id="rcq"></div><div class="rcf"><input id="rci" placeholder="اكتب رسالة…" maxlength="400" onkeydown="if(event.key=='Enter')RC.send()"><button onclick="RC.send()">إرسال</button></div></div>`;document.body.appendChild(w)}
+ const Q=me=='d'?[['🚗 معلومات السيارة','car'],['📍 موقعي','loc'],['وصلت، أنا بانتظارك',''],['في الطريق إليك','']]:[['📍 موقعي','loc'],['أنا بالانتظار',''],['📝 وصف المكان','desc'],['اتصل بي رجاءً','']];
+ document.getElementById('rcq').innerHTML=Q.map((q,i)=>`<button onclick="RC.quick(${i})">${q[0]}</button>`).join('');RC.Q=Q;w.hidden=false;RC.render()};
+RC.close=function(){const w=document.getElementById('rcw');if(w)w.hidden=true;RC.k=null};
+RC.render=function(){const o=get(),l=document.getElementById('rcl');if(!o||!l)return;const L=o.cm||[];if(o.st<1||o.st>=4){l.innerHTML='<div class="mu" style="text-align:center;padding:20px">انتهت المحادثة</div>'}else if(L.length!=RC.n){RC.n=L.length;const t=x=>new Date(x).toLocaleTimeString('ar-IQ',{hour:'numeric',minute:'2-digit'}),lk=s=>esc(s).replace(/(https:\/\/[^\s<]+)/g,'<a href="$1" target="_blank">$1</a>');
+ l.innerHTML=L.length?L.map(m=>`<div class="rcm ${m.f==RC.me?'me':''}"><div>${lk(m.t)}</div><small>${t(m.at)}</small></div>`).join(''):'<div class="mu" style="text-align:center;padding:20px">ابدأ المحادثة… رسائلك تصل فوراً</div>';l.scrollTop=l.scrollHeight}
+ try{L.length&&localStorage.setItem(seenK(RC.k,RC.id),String(L[L.length-1].at))}catch(e){}};
+RC.post=async function(t){if(!t||!RC.k)return;const ok=await set(RC.k,RC.id,{msg:t});if(!ok)alert('تعذر إرسال الرسالة');RC.render()};
+RC.send=function(){const i=document.getElementById('rci'),t=i.value.trim();if(!t)return;i.value='';RC.post(t)};
+RC.quick=function(n){const q=RC.Q[n];if(q[1]=='loc'){if(!navigator.geolocation)return alert('الموقع غير متاح');navigator.geolocation.getCurrentPosition(p=>RC.post('📍 موقعي: https://maps.google.com/?q='+p.coords.latitude.toFixed(6)+','+p.coords.longitude.toFixed(6)),()=>alert('فعّل الموقع'),{enableHighAccuracy:true,timeout:10000});return}
+ if(q[1]=='car'){const d=(DB.drivers&&DB.drivers[AUTH.id])||DB.me||{};return RC.post('🚗 '+[d.car,d.col||d.color,d.plate?('رقم '+d.plate):'',d.n?('الكابتن '+d.n):'',d.ph?('📞 '+d.ph):''].filter(Boolean).join(' • '))}
+ if(q[1]=='desc'){const t=prompt('صف مكانك (مثلاً: قرب الصيدلية، باب أزرق)');return t&&RC.post('📝 '+t)}RC.post(q[0])};
+setInterval(()=>{if(RC.k)RC.render()},1200);
+const st=document.createElement('style');st.textContent=`#rcw{position:fixed;inset:0;z-index:90;background:#0007;display:flex;align-items:flex-end}#rcw[hidden]{display:none}.rcb{background:var(--cd,#fff);color:var(--tx,#111);width:100%;max-width:560px;margin:0 auto;border-radius:20px 20px 0 0;height:78vh;display:flex;flex-direction:column;padding:12px 12px calc(12px + env(safe-area-inset-bottom,0px))}.rch{display:flex;justify-content:space-between;align-items:center;padding:4px 6px 10px}.rch button{background:none;border:0;font-size:20px;color:inherit;min-height:0;padding:4px 10px}#rcl{flex:1;overflow:auto;display:flex;flex-direction:column;gap:6px;padding:6px}.rcm{max-width:80%;align-self:flex-end;background:#8882;border-radius:14px;padding:8px 12px;word-break:break-word}.rcm.me{align-self:flex-start;background:#1f4fff;color:#fff}.rcm.me a{color:#fff}.rcm small{display:block;opacity:.6;font-size:11px;margin-top:2px}#rcq{display:flex;gap:6px;overflow-x:auto;padding:6px 2px}#rcq button{white-space:nowrap;border-radius:99px;padding:6px 12px;font-size:13px;min-height:0;background:#8882;color:inherit;border:0}.rcf{display:flex;gap:8px}.rcf input{flex:1;margin:0}.rcf button{min-height:0;padding:0 16px}`;document.head.appendChild(st);
+})();
