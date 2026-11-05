@@ -1,5 +1,11 @@
 name: Build Play Store AAB
-on: {workflow_dispatch: {}, push: {tags: ['v*']}}
+on:
+  workflow_dispatch: {}
+  push:
+    tags: ['v*']
+    branches: [main]
+    paths: ['mobile/.aab-build', '.github/workflows/aab.yml']
+permissions: {contents: write}
 jobs:
   aab:
     runs-on: ubuntu-24.04
@@ -15,15 +21,34 @@ jobs:
           echo "ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> $GITHUB_ENV
           yes | "${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
-      - name: Keystore
-        run: echo "${{ secrets.ANDROID_KEYSTORE_B64 }}" | base64 -d > "$RUNNER_TEMP/upload-key.jks"
-      - name: Build signed AAB
-        run: ./mobile/build-aab.sh ${{ matrix.app }}
+      - name: Keystore (optional)
+        run: if [ -n "${{ secrets.ANDROID_KEYSTORE_B64 }}" ]; then echo "${{ secrets.ANDROID_KEYSTORE_B64 }}" | base64 -d > "$RUNNER_TEMP/upload-key.jks"; else echo "UNSIGNED=1" >> $GITHUB_ENV; fi
+      - name: Build AAB
+        run: set -o pipefail; ./mobile/build-aab.sh ${{ matrix.app }} 2>&1 | tee build-${{ matrix.app }}.log
         env:
           SERVER_URL: ${{ secrets.SERVER_URL || 'https://premium-taxi.onrender.com' }}
           KS_FILE: ${{ runner.temp }}/upload-key.jks
           KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASS }}
           KS_ALIAS: upload
           VERSION_CODE: ${{ github.run_number }}
+      - name: Publish log on failure
+        if: failure()
+        run: tail -c 60000 build-${{ matrix.app }}.log > aablog-${{ matrix.app }}.txt; gh release upload aab-latest aablog-${{ matrix.app }}.txt --clobber -R ${{ github.repository }} || true
+        env: {GH_TOKEN: '${{ github.token }}'}
       - uses: actions/upload-artifact@v4
         with: {name: 'aab-${{ matrix.app }}', path: dist/*.aab}
+  release:
+    needs: aab
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v5
+        with: {path: out, merge-multiple: true}
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: aab-latest
+          name: 'ملفات متجر Google Play (AAB)'
+          body: 'ملفات AAB لرفعها في Play Console'
+          make_latest: false
+          files: out/*.aab
+          fail_on_unmatched_files: false

@@ -2,9 +2,9 @@
 # يبني ملف AAB موقّعاً جاهزاً لمتجر Google Play لكل تطبيق
 # Usage: SERVER_URL=https://premium-taxi.onrender.com KS_FILE=upload-key.jks KS_PASS=... KS_ALIAS=upload VERSION_CODE=1 ./build-aab.sh customer captain restaurant restpos
 set -euo pipefail
-: "${SERVER_URL:?set SERVER_URL}"; MODE="${MODE:-aab}"; if [ "$MODE" = aab ]; then : "${KS_FILE:?set KS_FILE}"; : "${KS_PASS:?set KS_PASS}"; fi
+: "${SERVER_URL:?set SERVER_URL}"; MODE="${MODE:-aab}"; if [ "$MODE" = aab ] && [ -z "${UNSIGNED:-}" ]; then : "${KS_FILE:?set KS_FILE}"; : "${KS_PASS:?set KS_PASS}"; fi
 KS_ALIAS="${KS_ALIAS:-upload}"; KS_PASS="${KS_PASS:-}"; KS_FILE="${KS_FILE:-}"; KEY_PASS="${KEY_PASS:-$KS_PASS}"; VC="${VERSION_CODE:-1}"; VN="${VERSION_NAME:-1.0.$VC}"
-cd "$(dirname "$0")"; SERVER_URL="${SERVER_URL%/}"; [ "$MODE" = aab ] && KS_FILE="$(realpath "$KS_FILE")"
+cd "$(dirname "$0")"; SERVER_URL="${SERVER_URL%/}"; [ -n "$KS_FILE" ] && [ -e "$KS_FILE" ] && KS_FILE="$(realpath "$KS_FILE")" || true
 declare -A ID=([customer]=com.safra.customer [captain]=com.safra.captain [restaurant]=com.safra.restaurant [restpos]=com.safra.restpos [owner]=com.safra.owner [support]=com.safra.support)
 declare -A NAME=([customer]="تكسي المتميز" [captain]="تكسي المتميز كابتن" [restaurant]="تكسي المتميز المطعم" [restpos]="جهاز طلبات المطعم" [owner]="تكسي المتميز المالك" [support]="تكسي المتميز الدعم")
 declare -A PAGE=([customer]=/customer.html [captain]=/driver.html [restaurant]=/rest.html [restpos]=/restpos.html [owner]="/panel.html?r=admin" [support]="/panel.html?r=support")
@@ -35,7 +35,7 @@ JSON
   else
    (cd android && ./gradlew bundleRelease --no-daemon -q)
    AAB=$(find android/app/build/outputs/bundle -name '*.aab' | head -1)
-   jarsigner -sigalg SHA256withRSA -digestalg SHA-256 -keystore "$KS_FILE" -storepass "$KS_PASS" -keypass "$KEY_PASS" "$AAB" "$KS_ALIAS"
+   [ -n "$KS_PASS" ] && [ -s "$KS_FILE" ] && jarsigner -sigalg SHA256withRSA -digestalg SHA-256 -keystore "$KS_FILE" -storepass "$KS_PASS" -keypass "$KEY_PASS" "$AAB" "$KS_ALIAS"
    cp "$AAB" "../../../dist/taxi-mutamayyiz-$a-$VN.aab"
   fi
   cd ../..
