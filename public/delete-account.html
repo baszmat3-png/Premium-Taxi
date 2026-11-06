@@ -1,16 +1,59 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>طلب حذف الحساب - تكسي المتميز</title>
-<style>body{font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;max-width:640px;margin:0 auto;padding:24px 16px 60px;line-height:1.9;color:#1f2937;background:#fff}h1{font-size:25px}.box{border:1px solid #e5e7eb;border-radius:16px;padding:16px;margin:16px 0}a.btn{display:inline-block;background:#dc2626;color:#fff;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:12px}@media(prefers-color-scheme:dark){body{background:#0b0f12;color:#e5e7eb}.box{border-color:#374151}}</style></head><body>
-<h1>طلب حذف الحساب</h1>
-<p>يمكنك طلب حذف حسابك وبياناتك الشخصية من تطبيقات «تكسي المتميز» في أي وقت.</p>
-<div class="box"><b>الطريقة</b>
-<ol><li>أرسل رسالة من الرقم أو البريد المسجّل في حسابك (أو تواصل مع الدعم من داخل التطبيق).</li>
-<li>اكتب فيها: «حذف حسابي» مع <b>اسمك</b> و<b>رقم الهاتف</b> المسجّل ونوع الحساب (زبون / كابتن / مطعم).</li>
-<li>سنتحقق من هويتك وننفذ الحذف خلال <b>30 يوماً</b> كحد أقصى ونؤكد لك بالرد.</li></ol>
-<p><a class="btn" id="m" href="mailto:support@your-domain.com?subject=%D8%AD%D8%B0%D9%81%20%D8%AD%D8%B3%D8%A7%D8%A8%D9%8A&body=%D8%A7%D9%84%D8%A7%D8%B3%D9%85%3A%0A%D8%B1%D9%82%D9%85%20%D8%A7%D9%84%D9%87%D8%A7%D8%AA%D9%81%3A%0A%D9%86%D9%88%D8%B9%20%D8%A7%D9%84%D8%AD%D8%B3%D8%A7%D8%A8%3A">إرسال طلب الحذف</a></p></div>
-<div class="box"><b>ما الذي يُحذف؟</b>
-<p>الاسم ورقم الهاتف والعناوين المحفوظة والمفضلة وبيانات الأجهزة ورموز الإشعارات والصور المرفوعة وبيانات الملف الشخصي.</p>
-<b>ما الذي قد نحتفظ به؟</b>
-<p>سجلات الرحلات والطلبات والمعاملات المالية بشكل مجهول الهوية قدر الإمكان، للمدة التي يفرضها القانون أو تقتضيها المحاسبة وحل النزاعات. يجب تسوية أي رصيد محفظة قبل الحذف.</p></div>
-<p style="font-size:14px;color:#6b7280">للاطلاع على سياسة الخصوصية: <a href="/privacy.html">سياسة الخصوصية</a>. <b>(للمالك: غيّر عنوان البريد في هذه الصفحة قبل النشر.)</b></p>
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>حذف الحساب — تكسي المتميز</title>
+<meta name="description" content="طلب حذف حساب وبيانات تطبيقات تكسي المتميز">
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--ink:#141821;--mu:#5f6878;--ac:#0a3dff;--rd:#dc2626;--line:#e3e6ee;--in:#f2f4f8}
+@media(prefers-color-scheme:dark){:root{--bg:#0b0f14;--card:#141a22;--ink:#e8ebf1;--mu:#9aa3b2;--ac:#6d8bff;--line:#262e3a;--in:#1c232d}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;line-height:1.85}
+main{max-width:680px;margin:0 auto;padding:24px 16px 70px}h1{font-size:27px;margin:0 0 4px}h2{font-size:19px;margin:0 0 8px}
+.mu{color:var(--mu);font-size:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px 18px;margin:14px 0}
+table{width:100%;border-collapse:collapse;font-size:15px}th,td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:start}td code{direction:ltr;display:inline-block;font-size:13px;background:#0a3dff14;padding:2px 8px;border-radius:8px}
+label{display:block;font-weight:700;font-size:14px;margin-top:10px}input,select,textarea{width:100%;font:inherit;font-size:16px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--in);color:var(--ink);margin-top:4px}
+button{width:100%;margin-top:14px;min-height:52px;border:0;border-radius:14px;background:var(--rd);color:#fff;font:inherit;font-weight:800;font-size:17px;cursor:pointer}button:disabled{opacity:.6}
+ol li,ul li{margin:4px 0}.ok{background:#0c9a6214;border-color:#0c9a62}.steps b{color:var(--ac)}
+</style></head><body><main>
+<h1>🗑️ حذف الحساب والبيانات</h1>
+<div class="mu">تكسي المتميز — الجهة المشغّلة: <span data-l="n">تكسي المتميز</span></div>
+
+<div class="card"><b>تنطبق هذه الصفحة على التطبيقات:</b>
+<table><thead><tr><th>اسم التطبيق</th><th>اسم الحزمة</th></tr></thead><tbody>
+<tr><td>تكسي المتميز</td><td><code>com.safra.customer</code></td></tr>
+<tr><td>تكسي المتميز كابتن</td><td><code>com.safra.captain</code></td></tr>
+<tr><td>تكسي المتميز دلفري</td><td><code>com.safra.delivery</code></td></tr>
+<tr><td>تكسي المتميز مطاعم</td><td><code>com.safra.restaurant</code></td></tr>
+<tr><td>تكسي المتميز جهاز المطعم</td><td><code>com.safra.restpos</code></td></tr>
+</tbody></table></div>
+
+<div class="card steps"><h2>الطريقة الأسرع: من داخل التطبيق</h2>
+<ol><li>افتح التطبيق وسجّل الدخول.</li><li>اذهب إلى <b>الحساب</b> (الزبون) أو <b>الإعدادات</b> (الكابتن والسائق).</li><li>اضغط <b>«حذف الحساب»</b> وأكّد.</li></ol>
+<div class="mu">حساب الزبون يُحذف فورًا. حساب الكابتن والسائق يُراجع أولًا لتسوية الرصيد المتبقي ثم يُحذف خلال 7 أيام.</div></div>
+
+<div class="card" id="fm"><h2>أو أرسل طلب الحذف من هنا</h2>
+<div class="mu">إذا لم تعد تملك التطبيق. سنتحقق أن الرقم يعود لك (برسالة واتساب أو اتصال) قبل الحذف.</div>
+<label>رقم الهاتف المسجّل في الحساب<input id="ph" type="tel" inputmode="tel" dir="ltr" placeholder="07XX XXX XXXX" autocomplete="tel"></label>
+<label>نوع الحساب<select id="t"><option value="customer">زبون</option><option value="driver">كابتن تكسي / خطوط</option><option value="delivery">سائق دلفري</option><option value="rest">مطعم</option></select></label>
+<label>الاسم (اختياري)<input id="n" autocomplete="name"></label>
+<label>سبب الحذف (اختياري)<textarea id="why" rows="2"></textarea></label>
+<button id="go">إرسال طلب الحذف</button>
+<div class="mu" id="msg" role="status" style="margin-top:8px"></div></div>
+
+<div class="card"><h2>ما الذي يُحذف؟</h2>
+<ul><li>الاسم ورقم الهاتف وبريد Google وكلمة المرور.</li><li>العناوين المحفوظة والمفضلة، وبيانات الأجهزة وجلسات الدخول ورموز الإشعارات.</li><li>صور المستمسكات والمركبة للكابتن، وبيانات حساب استلام الأرباح.</li><li>رصيد المحفظة غير المستخدم يسقط عند الحذف (للكابتن: نحوّل رصيده المستحق قبل الحذف).</li></ul>
+<h2 style="margin-top:14px">ما الذي نحتفظ به؟</h2>
+<ul><li>سجلات الرحلات والطلبات والمعاملات المالية <b>بدون اسم أو رقم هاتف</b>، للمدة التي تتطلبها القوانين المحاسبية ومنع الاحتيال (حتى 3 سنوات)، ثم تُحذف.</li></ul>
+<div class="mu">المدة: الحذف فوري من التطبيق، أو خلال 30 يومًا كحد أقصى عند الطلب من هذه الصفحة. للاستفسار: <span data-l="mail">—</span> <span data-l="ph" dir="ltr"></span></div></div>
+
+<p class="mu"><a href="/privacy.html">سياسة الخصوصية</a></p>
+</main>
+<script>
+fetch('/api/legal').then(r=>r.json()).then(L=>{document.querySelectorAll('[data-l]').forEach(e=>{const v=L[e.dataset.l];if(v)e.textContent=v})}).catch(()=>{});
+const $=s=>document.querySelector(s);
+$('#go').onclick=async()=>{const ph=$('#ph').value.trim(),m=$('#msg');if(ph.replace(/\D/g,'').length<10){m.textContent='أدخل رقم هاتف صحيح';return}
+ if(!confirm('سيتم حذف حسابك وبياناتك نهائيًا بعد التحقق. متابعة؟'))return;$('#go').disabled=true;m.textContent='جارٍ الإرسال…';
+ try{const r=await fetch('/api/delreq',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ph,t:$('#t').value,n:$('#n').value,why:$('#why').value})}),j=await r.json().catch(()=>({}));
+  if(!r.ok){m.textContent=j.e||'تعذر الإرسال، حاول لاحقًا';$('#go').disabled=false;return}
+  $('#fm').classList.add('ok');$('#fm').innerHTML='<h2>✅ استلمنا طلب الحذف</h2><p>رقم الطلب: <b dir="ltr">'+j.id+'</b><br>سنتحقق من الرقم ثم نحذف الحساب خلال 30 يومًا كحد أقصى ونؤكد لك.</p>'}
+ catch(e){m.textContent='تعذر الاتصال، حاول لاحقًا';$('#go').disabled=false}};
+</script>
 </body></html>
