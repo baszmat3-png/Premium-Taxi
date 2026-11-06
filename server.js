@@ -107,7 +107,7 @@ function devLogin(c,q,b,m,geo){const now=Date.now(),ip=q.headers['x-ip'],mt=b&&b
  c.sess=c.sess||[];c.devs=c.devs||{};
  const lg=(ok,why)=>{c.sess.push({at:now,dev:d,ip,m:S(m,12),ok,why:why||'',nm:u.nm,os:u.os,cn:(geo&&geo.cn)||''});if(c.sess.length>40)c.sess.splice(0,c.sess.length-40)};
  if(!d){lg(0,'nodev');return{c:'nodev',e:'تعذر تحديد الجهاز، حدّث التطبيق وأعد المحاولة'}}
- let x=c.devs[d];const max=Math.min(20,Math.max(1,+db.cfg.maxDev||3));
+ let x=c.devs[d];const max=c.rev?50:Math.min(20,Math.max(1,+db.cfg.maxDev||3));
  if(x&&x.st==1){lg(0,'blocked');return{c:'blocked',e:'هذا الجهاز محظور من قبل الإدارة'}}
  if(!x||x.st==2||now-(x.last||0)>=DEVTTL){if(actDev(c).filter(v=>v.id!=d).length>=max){lg(0,'limit');c.att=c.att||[];c.att.push({at:now,dev:d,ip,nm:u.nm,os:u.os});if(c.att.length>20)c.att.splice(0,c.att.length-20);return{c:'limit',e:'وصل هذا الحساب إلى الحد الأقصى ('+max+' أجهزة). سجّل الخروج من أحد أجهزتك الأخرى (الحساب ← الأجهزة والجلسات) أو تواصل مع الدعم.'}}
   x=c.devs[d]={id:d,first:now}}
@@ -142,6 +142,9 @@ const stOf=h=>h&&h['x-role']=='support'?Object.values(db.staff||{}).find(s=>!s.o
 const pLv=(st,sec)=>{if(!st)return 0;if(!st.perm)return sec=='q'?0:2;return +st.perm[sec]||0};
 const cleanPerm=v=>{if(!v||typeof v!='object')return undefined;const o={};PSEC.forEach(k=>{const x=+v[k]|0;if(x>0)o[k]=Math.min(2,x)});return o};
 /* حذف الحساب: يمسح البيانات الشخصية ويُبقي السجلات المالية مجهولة الهوية (متطلب قانوني ومحاسبي) */
+/* حساب مراجعة Google Play: رقم 07999999999 وكلمة المرور REVIEW_PASS (افتراضي TaxiReview2026) — بدون رمز واتساب وبدون حد للأجهزة */
+const ensureReview=()=>{try{const id='c9647999999999',pw=process.env.REVIEW_PASS||'TaxiReview2026',w=AU.pw[id],h=(x,sl)=>cr.scryptSync(x,sl,32).toString('hex');if(!w||h(pw,w.s)!==w.h){const sl=cr.randomBytes(16).toString('hex');AU.pw[id]={s:sl,h:h(pw,sl)};try{saveA()}catch(e){}}const c=db.customers[id]||{};if(!c.rev||c.del){db.customers[id]={...c,id,n:c.n&&!c.del?c.n:'Google Play Review',ph:'9647999999999',rev:1,ver:1,at:c.at||Date.now()};delete db.customers[id].del;save()}}catch(e){console.error('review acct',e.message)}};
+setTimeout(ensureReview,3000);setInterval(ensureReview,36e5);
 const purgeCust=id=>{const c=db.customers[id];if(!c)return 0;Object.keys(db.fcm||{}).forEach(k=>{if(k=='customer:'+id)delete db.fcm[k]});db.customers[id]={id,n:'حساب محذوف',del:Date.now()};delete AU.pw[id];AU.rev[id]=Date.now();Object.keys(AU.sessions).forEach(t=>{if(AU.sessions[t].id==id)delete AU.sessions[t]});try{saveA()}catch(e){}return 1};
 const purgeDrv=id=>{const d=db.drivers[id];if(!d)return 0;delete db.fcm['driver:'+id];db.drivers[id]={id,n:'كابتن محذوف',type:d.type,off:1,del:Date.now(),bal:0,pin:cr.randomBytes(16).toString('hex')};return 1};
 const audit=(h,what,id,amt)=>{db.audit=db.audit||[];db.audit.push({at:Date.now(),role:h['x-role'],by:h['x-role']=='support'?((stOf(h)||{}).n||'دعم'):(h['x-id']||''),ip:h['x-ip']||'',what,id,amt:amt||0});if(db.audit.length>3000)db.audit.splice(0,db.audit.length-3000)};
