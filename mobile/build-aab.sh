@@ -64,6 +64,8 @@ JAVA
   # بعض المكتبات تسحب androidx.browser 1.9 الذي يحتاج SDK 36 — نثبّت نسخة متوافقة
   printf '\nconfigurations.all { resolutionStrategy { force "androidx.browser:browser:1.8.0" } }\n' >> "$G"
   sed -i -E "s/versionCode [0-9]+/versionCode ${VC}/; s/versionName \"[^\"]*\"/versionName \"${VN}\"/" "$G"
+  # الحماية التلقائية في Google Play تتطلب minSdk 24 (أندرويد 7) أو أحدث
+  [ -f android/variables.gradle ] && sed -i -E "s/minSdkVersion = [0-9]+/minSdkVersion = 24/" android/variables.gradle; grep -n "minSdkVersion" android/variables.gradle || true
   node -e "require('sharp')({create:{width:1024,height:1024,channels:3,background:'#ffffff'}}).png().toFile('assets/icon-background.png').catch(()=>process.exit(1))" || true
   npx capacitor-assets generate --android --splashBackgroundColor '#0b1226' || true
   # احتياط: إن بقي ملف الأيقونة المتكيّفة يشير إلى خلفية غير موجودة نستعمل لوناً
