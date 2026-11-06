@@ -65,7 +65,7 @@ function login(){const st=LS.get('dapk',null);
  <div class="drk"><h2>تسجيل الدخول</h2><p class="m">أدخل رمز الكابتن والرمز السري المرسلين لك بعد تفعيل حسابك</p>
  <div class="drf"><span>🆔</span><input id="li" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text" placeholder="رمز الكابتن" value="${E(R.did||'')}"></div>
  <div class="drf"><span>🔒</span><input id="lp" autocapitalize="off" autocorrect="off" spellcheck="false" type="password" placeholder="الرمز السري" value="${E(R.pin||'')}" onkeydown="if(event.key=='Enter')lg()"></div>
- <button class="drb p" onclick="lg()">دخول</button></div>
+ <button class="drb p" onclick="lg()">دخول</button>${DELV?demoBtn('تعبئة حساب دلفري تجريبي','demo_d3','1111'):demoBtn('تعبئة حساب كابتن تجريبي','demo_d0','1111')}</div>
  <div class="drx">ليس لديك حساب؟</div>
  <button class="drb y" onclick="DREG.start()">${DELV?'🛵 سجّل كسائق دلفري':'🚕 سجّل ككابتن تكسي أو خطوط'}</button>
  ${st?`<button class="drb g" onclick="DREG.status()">📋 متابعة حالة طلبي</button>`:''}

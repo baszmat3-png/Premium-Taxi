@@ -203,3 +203,8 @@ window.TRC=(()=>{const e=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<
   if(t=='pr'){const f=document.createElement('iframe');f.style.cssText='position:fixed;left:-9999px;width:0;height:0;border:0';document.body.appendChild(f);const d=f.contentDocument;d.open();d.write(`<html dir="rtl"><head><meta charset="utf-8"><style>body{font:14px Tahoma,sans-serif;margin:8mm}${css.replace(/#trcx/g,'')}</style></head><body>${html({...x,wa:0}).replace(/<div class="qft">[\s\S]*<\/div><\/div>$/,'</div>')}</body></html>`);d.close();setTimeout(()=>{try{f.contentWindow.print()}catch(e){}setTimeout(()=>f.remove(),4000)},400)}};
   document.body.appendChild(o)};
  return{show,img,txt,waN}})();
+
+/* تعبئة تلقائية لبيانات الدخول التجريبية */
+window.DEMOF=(id,pin)=>{const r=document.getElementById('lr');if(r&&!r.hidden){r.value=id?'rest':'support';r.onchange&&r.onchange()}const a=document.getElementById('li'),b=document.getElementById('lp');if(a&&id!=null){a.value=id;a.hidden=false}if(b){b.value=pin;b.type='text';b.focus()}};
+const demoBtn=(lbl,id,pin,st)=>`<button type="button" class="dmo" style="${st||''}" onclick="DEMOF(${id==null?'null':"'"+id+"'"},'${pin}')">🧪 ${lbl} <small dir="ltr">${id?id+' / ':''}${pin}</small></button>`;
+(()=>{const c=document.createElement('style');c.textContent='.dmo{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:44px;margin-top:8px;border:2px dashed #f0a500;background:#fff8e6;color:#7a5200;border-radius:14px;font:inherit;font-weight:800;font-size:15px;cursor:pointer}.dmo small{font-weight:700;opacity:.75;font-size:12.5px}.dmos{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0 8px;margin-top:4px}';(document.head||document.documentElement).appendChild(c)})();
