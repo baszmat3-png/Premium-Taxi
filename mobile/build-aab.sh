@@ -11,17 +11,47 @@ declare -A PAGE=([customer]=/customer.html [delivery]="/driver.html?app=delivery
 APPS=("$@"); [ ${#APPS[@]} -eq 0 ] && APPS=(customer captain delivery restaurant restpos)
 npm install --no-audit --no-fund --legacy-peer-deps; mkdir -p ../dist
 # إشعارات Firebase (تصل والتطبيق مغلق): تُفعَّل فقط إذا وُجد ملف google-services.json — بدونه يتعطل التطبيق عند التسجيل
+# مفتاح توقيع ثابت لنسخ APK (حتى لا تتغير بصمة SHA-1 بين البناءات — يحتاجها تسجيل Google)
+if [ "$MODE" = apk ] && [ -s debug.keystore ]; then mkdir -p ~/.android; cp debug.keystore ~/.android/debug.keystore; fi
+# تسجيل الدخول بحساب Google داخل تطبيق الزبون (مكوّن أصلي)
+npm install --no-audit --no-fund --legacy-peer-deps @capgo/capacitor-social-login@^7.0.0 || echo "تعذر تثبيت social-login — يُبنى بدون تسجيل Google"
 GSJ="$PWD/google-services.json"; if [ -s "$GSJ" ]; then echo "FCM: google-services.json موجود — تفعيل الإشعارات"; npm install --no-audit --no-fund --legacy-peer-deps @capacitor/push-notifications@^7.0.0; else echo "FCM: لا يوجد google-services.json — البناء بدون إشعارات Firebase"; fi
 for a in "${APPS[@]}"; do
   W="build/$a"; rm -rf "$W"; mkdir -p "$W/assets"; cp -r www "$W/www"; cp icons/$a.png "$W/assets/icon-only.png"; cp icons/$a.png "$W/assets/icon-foreground.png"; cp icons/$a.png "$W/assets/splash.png"
   cp package.json "$W/"
   # التطبيق غير المضاف في مشروع Firebase يُبنى بدون مكتبة الإشعارات (وإلا يتعطل عند التسجيل)
   if [ -s "$GSJ" ] && ! grep -q '"package_name": "'"${ID[$a]}"'"' "$GSJ"; then echo "FCM: ${ID[$a]} غير مضاف في Firebase — بدون إشعارات"; node -e "const fs=require('fs'),f=process.argv[1],p=JSON.parse(fs.readFileSync(f,'utf8'));for(const k of ['dependencies','devDependencies'])if(p[k])delete p[k]['@capacitor/push-notifications'];fs.writeFileSync(f,JSON.stringify(p))" "$W/package.json"; fi
+  [ "$a" = customer ] || node -e "const fs=require('fs'),f=process.argv[1],p=JSON.parse(fs.readFileSync(f,'utf8'));for(const k of ['dependencies','devDependencies'])if(p[k])delete p[k]['@capgo/capacitor-social-login'];fs.writeFileSync(f,JSON.stringify(p))" "$W/package.json"
   ln -s "$PWD/node_modules" "$W/node_modules"; cd "$W"
   cat > capacitor.config.json <<JSON
 {"appId":"${ID[$a]}","appName":"${NAME[$a]}","webDir":"www","server":{"url":"${SERVER_URL}${PAGE[$a]}","cleartext":false,"androidScheme":"https","allowNavigation":["$(echo "$SERVER_URL" | sed 's#https\?://##')"]},"android":{"allowMixedContent":false}}
 JSON
   npx cap add android
+  if [ "$a" = customer ] && [ -d node_modules/@capgo/capacitor-social-login ]; then MA=$(find android/app/src/main/java -name MainActivity.java | head -1); PK=$(sed -n 's/^package \(.*\);/\1/p' "$MA")
+   cat > "$MA" <<JAVA
+package ${PK};
+import android.content.Intent;
+import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.Plugin;
+import com.getcapacitor.PluginHandle;
+import ee.forgr.capacitor.social.login.GoogleProvider;
+import ee.forgr.capacitor.social.login.ModifiedMainActivityForSocialLoginPlugin;
+import ee.forgr.capacitor.social.login.SocialLoginPlugin;
+public class MainActivity extends BridgeActivity implements ModifiedMainActivityForSocialLoginPlugin {
+  @Override
+  public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    super.onActivityResult(requestCode, resultCode, data);
+    if (requestCode >= GoogleProvider.REQUEST_AUTHORIZE_GOOGLE_MIN && requestCode < GoogleProvider.REQUEST_AUTHORIZE_GOOGLE_MAX) {
+      PluginHandle h = getBridge().getPlugin("SocialLogin");
+      if (h == null) return;
+      Plugin p = h.getInstance();
+      if (p instanceof SocialLoginPlugin) ((SocialLoginPlugin) p).handleGoogleLoginIntent(requestCode, data);
+    }
+  }
+  public void IHaveModifiedTheMainActivityForTheUseWithSocialLoginPlugin() {}
+}
+JAVA
+   echo "Google: MainActivity معدّل لتسجيل Google"; fi
   if [ -s "$GSJ" ] && grep -q '"package_name": "'"${ID[$a]}"'"' "$GSJ"; then cp "$GSJ" android/app/google-services.json; echo "FCM: مفعّل لـ ${ID[$a]}"; fi
   M=android/app/src/main/AndroidManifest.xml
   P='<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/><uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/><uses-permission android:name="android.permission.POST_NOTIFICATIONS"/><uses-permission android:name="android.permission.VIBRATE"/>'

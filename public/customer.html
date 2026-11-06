@@ -323,9 +323,11 @@ function login(v){$('#nm').hidden=1;$('#nf').hidden=1;v.innerHTML=`<div class="l
 function gsi(cb){if(window.google&&google.accounts&&google.accounts.oauth2)return cb();const g=document.createElement('script');g.src='https://accounts.google.com/gsi/client';g.onload=cb;g.onerror=()=>alert('تعذر تحميل خدمة Google. تحقق من الاتصال بالإنترنت');document.head.appendChild(g)}
 async function gsign(){
  if(!window.GCID)return alert('تسجيل Google غير مفعّل بعد. على صاحب التطبيق إضافة GOOGLE_CLIENT_ID في إعدادات السيرفر.');
+ const SL=window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.SocialLogin;
+ if(SL){try{if(!window._slI){await SL.initialize({google:{webClientId:GCID}});window._slI=1}const u=await SL.login({provider:'google',options:{}}),t=u&&u.result&&(u.result.idToken||(u.result.accessToken&&u.result.accessToken.token));if(!t)throw new Error('لم يُستلم رمز الدخول من Google');return done(await api('google',u.result.idToken?{cred:u.result.idToken}:{at:t}))}catch(e){const m=String((e&&e.message)||e||'');if(/cancel/i.test(m))return;return alert('تعذر تسجيل الدخول عبر Google: '+m)}}
  const GA=window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.GoogleAuth;
  if(GA){try{await GA.initialize({clientId:GCID,scopes:['profile','email'],grantOfflineAccess:false});const u=await GA.signIn();return done(await api('google',{cred:u.authentication.idToken}))}catch(e){return alert((e&&e.message)||'تعذر تسجيل الدخول عبر Google')}}
- if(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())return alert('تسجيل Google داخل التطبيق يحتاج إضافة المكوّن الأصلي. استخدم رقم الهاتف أو واتساب حاليًا.');
+ if(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())return alert('حدّث التطبيق لآخر نسخة لتفعيل تسجيل الدخول بحساب Google. حاليًا استخدم رقم الهاتف أو واتساب.');
  gsi(()=>{try{google.accounts.oauth2.initTokenClient({client_id:GCID,scope:'openid email profile',callback:r=>{if(r&&r.access_token)api('google',{at:r.access_token}).then(done).catch(alert);else if(r&&r.error&&r.error!='access_denied')alert('تعذر تسجيل الدخول عبر Google')},error_callback:()=>{}}).requestAccessToken()}catch(e){alert('تعذر تسجيل الدخول عبر Google')}})}
 function lt(n){[0,1,2].forEach(i=>{$('#f'+i).hidden=i!=n;$('#t'+i).classList.toggle('a',i==n)});$('#lgb').hidden=n==0;$('#lgw').hidden=n==2;$('#lgnb').hidden=n==1;scrollTo(0,0)}
 async function lgn(){try{done(await api('login',{phone:$('#lp').value,password:$('#lw').value}))}catch(e){alert(e)}}
