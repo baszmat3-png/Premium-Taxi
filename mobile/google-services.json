@@ -7,6 +7,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:317235951415:android:6dad005b332484fc8cccb2",
+        "android_client_info": {
+          "package_name": "com.safra.captain"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD7vdm6eW_c7RepdacNwZ235oIQTWKla7o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:317235951415:android:2169e4243c87fe738cccb2",
         "android_client_info": {
           "package_name": "com.safra.customer"
