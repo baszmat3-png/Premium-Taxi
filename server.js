@@ -478,11 +478,41 @@ async function menuAI(rid,b){
  items.forEach(i=>{if(!k)i.p=Math.round(i.p)});
  return{items,k,notes:pj.fixed?'الرد كان مقطوعًا فاستُخرج الجزء المكتمل فقط.':'',truncated:(trunc||pj.fixed)?1:0}}
 const rad=x=>x*Math.PI/180,hv=(a,b)=>{const dl=rad(b.lat-a.lat),dg=rad(b.lng-a.lng),x=Math.sin(dl/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dg/2)**2;return 12742*Math.asin(Math.sqrt(x))};
-let DC=0;function dispatch(){if(db.cfg.auto===0)return;const mx=db.cfg.maxKm||10,now=Date.now(),I=ix();
+let DC=0;/* بيانات تجريبية: كل السجلات تبدأ معرّفاتها بـ demo وتحمل demo:1 وتُحذف بزر واحد */
+const DEMOK=['customers','drivers','rests','rides','orders','apps','wd','topups','ctop','tickets','chat','offers','cards','cardorders','lines','lreqs','lsug','staff','incw'];
+function demoClear(){let n=0;for(const k of DEMOK){const c=db[k];if(!c)continue;for(const id of Object.keys(c))if(id.startsWith('demo')||(c[id]&&c[id].demo)){delete c[id];n++}}IXF=1;save();bump();return n}
+function demoSeed(){demoClear();const now=Date.now(),H=36e5,D=864e5,rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1)),pick=a=>a[rnd(0,a.length-1)],B={lat:33.3152,lng:44.3661},near=(r)=>({lat:+(B.lat+(Math.random()-.5)*r).toFixed(5),lng:+(B.lng+(Math.random()-.5)*r).toFixed(5)});
+ const AR=['الكرادة','المنصور','زيونة','الجادرية','الأعظمية','الكاظمية','اليرموك','الحارثية','الدورة','البلديات'];
+ const C=[['أحمد علي','07701000001'],['زينب حسن','07701000002'],['مصطفى كريم','07701000003'],['نور محمد','07701000004'],['علي عباس','07701000005'],['سارة جاسم','07701000006']];
+ C.forEach(([n,ph],i)=>{db.customers['demo_c'+i]={id:'demo_c'+i,demo:1,n,ph,bal:rnd(0,30)*1000,at:now-rnd(5,60)*D,last:now-rnd(0,48)*H}});
+ const DR=[['حيدر الكابتن','taxi','كيا سيراتو','12345 بغداد'],['محمد الساعدي','taxi','تويوتا كورولا','23456 بغداد'],['عمار جبار','both','هيونداي إلنترا','34567 بغداد'],['كرار سلام','delivery','هوندا 150','56789 بغداد'],['سجاد فاضل','delivery','ياماها','67890 بغداد'],['حسين ناصر','taxi','كيا K5','78901 بغداد']];
+ DR.forEach(([n,type,car,plate],i)=>{db.drivers['demo_d'+i]={id:'demo_d'+i,demo:1,n,ph:'0780100000'+i,pin:'1111',type,car,plate,bal:rnd(-5,60)*1000,on:i<4?1:0,loc:near(.08),locAt:1,rt:+(4+Math.random()).toFixed(1),at:now-rnd(10,90)*D}});
+ const RS=[['مطعم الشيف (تجريبي)',[['برجر لحم',6000,'برجر'],['برجر دجاج',5000,'برجر'],['بطاطا',2000,'مقبلات'],['بيبسي',750,'مشروبات']]],['بيتزا بغداد (تجريبي)',[['بيتزا مارغريتا',8000,'بيتزا'],['بيتزا لحم',10000,'بيتزا'],['سلطة',3000,'مقبلات']]],['مشويات الكرادة (تجريبي)',[['تكة لحم',12000,'مشويات'],['كباب',10000,'مشويات'],['شاي',500,'مشروبات']]]];
+ RS.forEach(([n,it],i)=>{db.rests['demo_r'+i]={id:'demo_r'+i,demo:1,n,pin:'2222',open:1,loc:near(.06),pct:10,items:it.map(([nn,p,cat],j)=>({id:'demo_i'+i+j,n:nn,p,cat,d:'',img:''})),at:now-30*D}});
+ let rc=0,oc=0;for(let d=13;d>=0;d--){const k=rnd(2,6);for(let x=0;x<k;x++){const t=now-d*D-rnd(0,20)*H,c=pick(C.map((_,i)=>'demo_c'+i)),cc=db.customers[c],dv=pick(['demo_d0','demo_d1','demo_d2','demo_d5']),fare=rnd(3,12)*500,st=d==0&&x==0?1:Math.random()<.12?-1:4,id='demo_t'+(rc++);
+  db.rides[id]={id,demo:1,cid:c,cn:cc.n,cp:cc.ph,from:near(.1),to:near(.1),fa:pick(AR),ta:pick(AR),km:rnd(3,15),min:rnd(8,35),fare,rt:pick(['eco','plus','super']),pay:Math.random()<.3?'wallet':'cash',st,at:t,did:st==-1&&Math.random()<.5?'':dv,acc:t+2*6e4,t4:st==4?t+rnd(15,40)*6e4:undefined,com:st==4?Math.round(fare*.1):0,cr:st==-1?'غيّرت رأيي':undefined}}
+  const ko=rnd(1,4);for(let x=0;x<ko;x++){const t=now-d*D-rnd(0,20)*H,ri=rnd(0,2),R=db.rests['demo_r'+ri],its=[0,1].map(()=>{const it=pick(R.items);return{n:it.n,q:rnd(1,3),p:it.p}}),sb=its.reduce((s,i)=>s+i.q*i.p,0),disc=Math.random()<.3?Math.round(sb*.1):0,fee=pick([1500,2000,2500]),c=pick(C.map((_,i)=>'demo_c'+i)),cc=db.customers[c],r=Math.random(),st=d==0&&x<2?(x==0?0:2):r<.1?-1:4,ret=st==4&&r>.9?{r:pick(['لم يستلم الزبون','الزبون لا يرد']),img:'',at:t+50*6e4}:undefined,id='demo_o'+(oc++);
+  db.orders[id]={id,demo:1,cid:c,cn:cc.n,cp:cc.ph,rid:R.id,rn:R.n,rloc:R.loc,loc:near(.08),its,disc,fee,tot:sb-disc+fee,pay:'cash',st,at:t,acc:st>=1?t+3*6e4:undefined,rdy:st>=2?t+18*6e4:undefined,t3:st>=3?t+25*6e4:undefined,t4:st==4?t+45*6e4:undefined,did:st>=2?pick(['demo_d2','demo_d3','demo_d4']):'',rpct:10,rcom:st==4&&!ret?Math.round((sb-disc)*.1):0,ret,owed:ret?fee:undefined,note:Math.random()<.3?'بدون بصل':'',rated:st==4&&!ret?rnd(3,5):undefined,why:st==-1?'تأخر المطعم':undefined}}}
+ db.apps.demo_a0={id:'demo_a0',demo:1,cid:'',src:'driver-app',type:'taxi',n:'ياسر عبد الله محمد',ph:'07702000001',city:'بغداد - الكرادة',car:'كيا سيراتو',year:'2020',color:'أبيض',plate:'45678 بغداد',docs:{},st:0,at:now-3*H};
+ db.apps.demo_a1={id:'demo_a1',demo:1,cid:'',src:'driver-app',type:'delivery',veh:'bike',n:'باقر حميد علي',ph:'07702000002',city:'بغداد - المنصور',car:'هوندا 150',plate:'98765 بغداد',docs:{},st:0,at:now-H};
+ db.wd.demo_w0={id:'demo_w0',demo:1,did:'demo_d0',amt:30000,m:'زين كاش',acc:'07801000000',an:'حيدر الكابتن',bc:'',st:0,at:now-2*H};
+ db.wd.demo_w1={id:'demo_w1',demo:1,did:'demo_d1',amt:50000,m:'كي كارد',acc:'7711223344',an:'محمد الساعدي',bc:'',st:1,at:now-2*D};
+ db.topups.demo_p0={id:'demo_p0',demo:1,did:'demo_d3',amt:25000,img:'',st:0,at:now-40*6e4};
+ db.ctop.demo_z0={id:'demo_z0',demo:1,cid:'demo_c1',amt:10000,m:'zain',ref:'ZC123456',img:'',st:0,at:now-30*6e4};
+ db.tickets.demo_k0={id:'demo_k0',demo:1,cn:'نور محمد',cp:'07701000004',oid:'demo_o3',msg:'الطلب وصل متأخر والأكل بارد',st:0,at:now-90*6e4};
+ db.chat=db.chat||{};db.chat.demo_c2={id:'demo_c2',demo:1,cid:'demo_c2',cn:'مصطفى كريم',cp:'07701000003',msgs:[{f:'c',t:'مرحبا، الكابتن ما وصل لحد الآن',at:now-20*6e4},{f:'s',t:'أهلاً بك، نتواصل معه حالاً',at:now-18*6e4},{f:'c',t:'شكراً',at:now-17*6e4}],at:now-17*6e4,last:'شكراً',lf:'c',su:1};
+ db.offers.demo_f0={id:'demo_f0',demo:1,t:'خصم الجمعة (تجريبي)',d:'20% على رحلات التكسي',pct:20,max:2000,n:2,cat:'taxi',code:'DEMO20',on:1};
+ db.cards.demo_g0={id:'demo_g0',demo:1,n:'ببجي 60 UC (تجريبي)',p:1500,kind:'card',cat:'ألعاب',e:'🎮',auto:1};
+ db.cardorders.demo_b0={id:'demo_b0',demo:1,cid:'demo_c0',cn:'أحمد علي',cp:'07701000001',card:'demo_g0',cn2:'ببجي 60 UC',p:1500,pay:'cash',st:0,at:now-15*6e4};
+ db.lines=db.lines||{};db.lines.demo_l0={id:'demo_l0',demo:1,did:'demo_d0',from:near(.05),to:near(.05),fa:'الكرادة',ta:'جامعة بغداد - الجادرية',scope:'in',gov:'بغداد',seats:10,price:35000,t1:'07:30',t2:'14:00',days:[0,1,2,3,4],at:now-5*D};
+ db.lsug=db.lsug||{};db.lsug.demo_s0={id:'demo_s0',demo:1,cid:'demo_c4',cn:'علي عباس',cp:'07701000005',fa:'الدورة',ta:'وزارة الصحة',tm:'07:00',seats:2,days:'الأحد–الخميس',note:'',st:0,n:3,at:now-D};
+ db.staff.demo_st={id:'demo_st',demo:1,n:'موظف دعم تجريبي',pin:'3333'};
+ IXF=1;save();bump();return{customers:C.length,drivers:DR.length,rests:RS.length,rides:rc,orders:oc}}
+function dispatch(){if(db.cfg.auto===0)return;const mx=db.cfg.maxKm||10,now=Date.now(),I=ix();
  const q=Object.values(I.pend).filter(([o,k])=>k=='orders'?(o.st==2||(o.st==1&&o.pt&&o.pt-now<=6e5))&&!o.did:o.st==0&&!o.did).sort((a,b)=>a[0].at-b[0].at);
  if(!q.length)return;const bs=new Set(Object.keys(I.busy)),onl=Object.values(db.drivers).filter(d=>d.on&&d.loc);
  for(const[o,k,p,id]of q){let best=null,bd=1e9;
-  for(const d of onl){if((d.bal||0)<=db.cfg.minBal||(d.locAt&&now-d.locAt>12e4)||(o.rej||[]).includes(d.id)||bs.has(d.id)||(d.type&&d.type!='both'&&d.type!=(k=='rides'?'taxi':'delivery')))continue;const x=hv(d.loc,p);if(x<=mx&&x<bd){bd=x;best=d}}
+  for(const d of onl){if(d.demo||(d.bal||0)<=db.cfg.minBal||(d.locAt&&now-d.locAt>12e4)||(o.rej||[]).includes(d.id)||bs.has(d.id)||(d.type&&d.type!='both'&&d.type!=(k=='rides'?'taxi':'delivery')))continue;const x=hv(d.loc,p);if(x<=mx&&x<bd){bd=x;best=d}}
   if(best){DC++;o.did=best.id;o.auto=1;o.aat=now;if(k=='rides')o.st=1;bs.add(best.id);touch(k,id);try{PUSH.send('driver',best.id,{t:k=='rides'?'🚕 طلب رحلة جديد':'🛵 طلب توصيل جديد',b:'افتح التطبيق لقبول الطلب',u:'/driver.html',tag:'job'});if(k=='rides')pushState(k,id)}catch(e){}}}}
 setInterval(()=>{const c=DC;dispatch();if(DC!=c){savel();bump()}},5000);
 /* زيادة الأجرة تلقائياً: إذا لم يقبل أي كابتن الرحلة خلال cfg.esc.sec (افتراضي 3 دقائق) تزداد الأجرة بنسبة صغيرة، مرتين فقط (cfg.esc.n) ثم تثبت. تُخصم الزيادة من محفظة الزبون إن دفع بالمحفظة */
@@ -558,6 +588,7 @@ const SRV=http.createServer((q,s)=>{
  if(u.startsWith('/api/backups')){const h=q.headers;if(h['x-role']!='admin'||!ok(h)){q.resume();return j(403,{})}
   if(u=='/api/backups'&&q.method=='GET')return j(200,{dir:BKD,gh:!!(process.env.BACKUP_GH_TOKEN&&process.env.BACKUP_GH_REPO),ghAt:db.cfg.bkGhAt||0,disk:!!process.env.DATA_FILE,weak:ADMIN==='1234'||String(ADMIN).length<6,vapid:!!process.env.VAPID_PRIVATE,items:bkList().slice(0,120)});
   if(u=='/api/backups/now'&&q.method=='POST'){q.resume();DBS.flush(true);AUS.flush(true);const n=backupNow('manual');return n?j(200,{ok:1,n,gh:!!(GHT()&&GHR())}):j(500,{e:'تعذر إنشاء النسخة'})}
+  if(u=='/api/backups/demo'&&q.method=='POST'){let b='';q.on('data',c=>b+=c);q.on('end',()=>{try{const o=JSON.parse(b||'{}');if(o.op=='seed'){const r=demoSeed();audit(h,'demo-seed','',0);return j(200,{ok:1,...r})}if(o.op=='clear'){const n=demoClear();audit(h,'demo-clear','',0);return j(200,{ok:1,n})}j(400,{})}catch(e){j(500,{e:e.message})}});return}
   if(u=='/api/backups/download'&&q.method=='GET'){q.resume();DBS.flush(true);AUS.flush(true);const n=bkName(Date.now(),'download');audit(h,'backup-download',n,0);const buf=bkBuf();s.writeHead(200,{'Content-Type':'application/gzip','Content-Disposition':'attachment; filename="'+n+'"','Content-Length':buf.length,'Cache-Control':'no-store'});return s.end(buf)}
   if(u=='/api/backups/restore'&&q.method=='POST'){const ch=[];let sz=0;q.on('data',c=>{sz+=c.length;if(sz>3e8)q.destroy();else ch.push(c)});q.on('end',async()=>{try{const body=Buffer.concat(ch);let r;try{backupNow('prerestore')}catch(e){}
    if(String(q.headers['content-type']||'').includes('json')){const b=JSON.parse(body.toString()||'{}');if(b.from=='github')r=await ghRestoreLatest();else if(b.name){const n=path.basename(String(b.name));if(!/^backup-[\w-]+\.json\.gz$/.test(n))return j(400,{e:'اسم غير صالح'});r=applyBackup(fs.readFileSync(path.join(BKD,n)))}else return j(400,{e:'حدد مصدر الاستعادة'})}else r=applyBackup(body);
