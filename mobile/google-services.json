@@ -80,6 +80,25 @@
           "other_platform_oauth_client": []
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:317235951415:android:97c4455978ffb1078cccb2",
+        "android_client_info": {
+          "package_name": "com.safra.support"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD7vdm6eW_c7RepdacNwZ235oIQTWKla7o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
     }
   ],
   "configuration_version": "1"
