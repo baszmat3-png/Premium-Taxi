@@ -10,6 +10,8 @@ declare -A NAME=([customer]="تكسي المتميز" [delivery]="تكسي ال�
 declare -A PAGE=([customer]=/customer.html [delivery]="/driver.html?app=delivery" [captain]=/driver.html [restaurant]=/rest.html [restpos]=/restpos.html [owner]="/panel.html?r=admin" [support]="/panel.html?r=support")
 APPS=("$@"); [ ${#APPS[@]} -eq 0 ] && APPS=(customer captain delivery restaurant restpos)
 npm install --no-audit --no-fund --legacy-peer-deps; mkdir -p ../dist
+# إشعارات Firebase (تصل والتطبيق مغلق): تُفعَّل فقط إذا وُجد ملف google-services.json — بدونه يتعطل التطبيق عند التسجيل
+GSJ="$PWD/google-services.json"; if [ -s "$GSJ" ]; then echo "FCM: google-services.json موجود — تفعيل الإشعارات"; npm install --no-audit --no-fund --legacy-peer-deps @capacitor/push-notifications@^7.0.0; else echo "FCM: لا يوجد google-services.json — البناء بدون إشعارات Firebase"; fi
 for a in "${APPS[@]}"; do
   W="build/$a"; rm -rf "$W"; mkdir -p "$W/assets"; cp -r www "$W/www"; cp icons/$a.png "$W/assets/icon-only.png"; cp icons/$a.png "$W/assets/icon-foreground.png"; cp icons/$a.png "$W/assets/splash.png"
   cp package.json "$W/"; ln -s "$PWD/node_modules" "$W/node_modules"; cd "$W"
@@ -17,6 +19,7 @@ for a in "${APPS[@]}"; do
 {"appId":"${ID[$a]}","appName":"${NAME[$a]}","webDir":"www","server":{"url":"${SERVER_URL}${PAGE[$a]}","cleartext":false,"androidScheme":"https","allowNavigation":["$(echo "$SERVER_URL" | sed 's#https\?://##')"]},"android":{"allowMixedContent":false}}
 JSON
   npx cap add android
+  if [ -s "$GSJ" ]; then cp "$GSJ" android/app/google-services.json; grep -q '"package_name": "'"${ID[$a]}"'"' "$GSJ" || echo "تحذير: ${ID[$a]} غير مضاف في مشروع Firebase — لن تعمل إشعاراته"; fi
   M=android/app/src/main/AndroidManifest.xml
   P='<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/><uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/><uses-permission android:name="android.permission.POST_NOTIFICATIONS"/><uses-permission android:name="android.permission.VIBRATE"/>'
   [ "$a" = captain ] || [ "$a" = delivery ] && P="$P"'<uses-permission android:name="android.permission.CAMERA"/><uses-permission android:name="android.permission.RECORD_AUDIO"/><uses-feature android:name="android.hardware.camera" android:required="false"/>'

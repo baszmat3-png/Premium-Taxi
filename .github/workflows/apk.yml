@@ -20,6 +20,9 @@ jobs:
           echo "ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> $GITHUB_ENV
           yes | "${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+      - name: Firebase config
+        run: if [ -n "$GSJ" ]; then echo "$GSJ" | (base64 -d 2>/dev/null || cat) > mobile/google-services.json; python3 -c "import json;json.load(open('mobile/google-services.json'))" || { echo "$GSJ" > mobile/google-services.json; }; fi
+        env: {GSJ: '${{ secrets.GOOGLE_SERVICES_JSON }}'}
       - run: set -o pipefail; ./mobile/build-aab.sh ${{ matrix.app }} 2>&1 | tee build-${{ matrix.app }}.log
         env: {MODE: apk, SERVER_URL: "${{ secrets.SERVER_URL || 'https://premium-taxi.onrender.com' }}", VERSION_CODE: '${{ github.run_number }}'}
       - name: Publish log on failure

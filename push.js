@@ -115,5 +115,5 @@ module.exports = function (opt) {
     } catch (e) { return 0; }
   }
 
-  return { key: () => keys.pub, add, rm, send, _encrypt: encrypt, _count: () => Object.keys(subs).length };
+  return { key: () => keys.pub, add, rm, send, list: () => Object.keys(subs).filter(k => subs[k] && subs[k].length), _encrypt: encrypt, _count: () => Object.keys(subs).length };
 };

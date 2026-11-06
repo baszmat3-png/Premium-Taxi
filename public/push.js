@@ -1,8 +1,27 @@
 /* push.js — تفعيل إشعارات الدفع للزبون والكابتن والمطعم
    - يعرض شريطاً صغيراً يطلب إذن الإشعارات بضغطة المستخدم (المتصفحات تمنع الطلب التلقائي)
    - يعيد تسجيل الاشتراك تلقائياً بعد كل تسجيل دخول */
+/* ---------- تطبيق أندرويد (Capacitor): إشعارات Firebase تصل والتطبيق مغلق ---------- */
 (function(){
- if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)||!window.isSecureContext)return;
+ const C=window.Capacitor,PN=C&&C.isNativePlatform&&C.isNativePlatform()&&C.Plugins&&C.Plugins.PushNotifications;if(!PN)return;window.NATIVE_PUSH=1;
+ const who=()=>{try{return AUTH&&{customer:1,driver:1,rest:1}[AUTH.role]&&AUTH.id?AUTH.role+':'+AUTH.id:''}catch(e){return ''}};
+ let tok='',sent='',started=0;
+ const send=async()=>{const w=who();if(!w||!tok||sent==w+tok)return;try{const r=await fetch('/api/push/fcm',{method:'POST',headers:H(),body:JSON.stringify({token:tok,app:document.documentElement.dataset.app||''})});if(r.ok)sent=w+tok}catch(e){}};
+ async function init(){if(started)return;started=1;
+  try{PN.createChannel&&await PN.createChannel({id:'main',name:'الإشعارات والعروض',description:'حالة الطلبات والرحلات والعروض والخصومات',importance:5,visibility:1,vibration:true,sound:'default'})}catch(e){}
+  try{PN.createChannel&&await PN.createChannel({id:'jobs',name:'طلبات جديدة للكابتن',description:'تنبيه بوصول طلب رحلة أو توصيل',importance:5,visibility:1,vibration:true,sound:'default'})}catch(e){}
+  try{PN.createChannel&&await PN.createChannel({id:'orders',name:'طلبات المطعم',importance:5,visibility:1,vibration:true,sound:'default'})}catch(e){}
+  PN.addListener('registration',t=>{tok=t.value;send()});
+  PN.addListener('registrationError',e=>console.warn('push reg error',e));
+  PN.addListener('pushNotificationActionPerformed',a=>{try{const u=a.notification&&a.notification.data&&a.notification.data.u;if(u&&!location.pathname.endsWith(u.split('?')[0]))location.href=u}catch(e){}});
+  PN.addListener('pushNotificationReceived',n=>{try{if(typeof toast=='function')toast((n.title||'')+(n.body?' — '+n.body:''))}catch(e){}});
+  let p=await PN.checkPermissions();if(p.receive==='prompt'||p.receive==='prompt-with-rationale')p=await PN.requestPermissions();
+  if(p.receive==='granted')await PN.register();else started=0}
+ setInterval(()=>{if(who()){init().catch(()=>{started=0});send()}},5000);setTimeout(()=>{if(who())init().catch(()=>{started=0})},1500);
+ window.enablePush=async()=>{started=0;await init();return !!tok};
+})();
+(function(){
+ if(window.NATIVE_PUSH||!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)||!window.isSecureContext)return;
  const ROLES={customer:1,driver:1,rest:1};
  let last='',bar=null,busy=0;
  const u8=s=>{const p='='.repeat((4-s.length%4)%4),r=atob((s+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(r,c=>c.charCodeAt(0))};

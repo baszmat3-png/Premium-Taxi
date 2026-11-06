@@ -23,6 +23,9 @@ jobs:
           yes | "${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
       - name: Keystore (optional)
         run: if [ -n "${{ secrets.ANDROID_KEYSTORE_B64 }}" ]; then echo "${{ secrets.ANDROID_KEYSTORE_B64 }}" | base64 -d > "$RUNNER_TEMP/upload-key.jks"; else echo "UNSIGNED=1" >> $GITHUB_ENV; fi
+      - name: Firebase config
+        run: if [ -n "$GSJ" ]; then echo "$GSJ" | (base64 -d 2>/dev/null || cat) > mobile/google-services.json; python3 -c "import json;json.load(open('mobile/google-services.json'))" || { echo "$GSJ" > mobile/google-services.json; }; fi
+        env: {GSJ: '${{ secrets.GOOGLE_SERVICES_JSON }}'}
       - name: Build AAB
         run: set -o pipefail; ./mobile/build-aab.sh ${{ matrix.app }} 2>&1 | tee build-${{ matrix.app }}.log
         env:
