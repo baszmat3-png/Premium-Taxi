@@ -16,6 +16,7 @@ if [ "$MODE" = apk ] && [ -s debug.keystore ]; then mkdir -p ~/.android; cp debu
 # تسجيل الدخول بحساب Google داخل تطبيق الزبون (مكوّن أصلي)
 npm install --no-audit --no-fund --legacy-peer-deps @capacitor/geolocation@^7.0.0 || echo "تعذر تثبيت geolocation"
 npm install --no-audit --no-fund --legacy-peer-deps @capgo/capacitor-social-login@^7.0.0 || echo "تعذر تثبيت social-login — يُبنى بدون تسجيل Google"
+SDKM="${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager"; if [ -x "$SDKM" ] && [ ! -d "${ANDROID_HOME:-/usr/local/lib/android/sdk}/platforms/android-36" ]; then yes | "$SDKM" "platforms;android-36" "build-tools;36.0.0" >/dev/null || echo "تعذر تثبيت android-36"; fi
 GSJ="$PWD/google-services.json"; if [ -s "$GSJ" ]; then echo "FCM: google-services.json موجود — تفعيل الإشعارات"; npm install --no-audit --no-fund --legacy-peer-deps @capacitor/push-notifications@^7.0.0; else echo "FCM: لا يوجد google-services.json — البناء بدون إشعارات Firebase"; fi
 for a in "${APPS[@]}"; do
   W="build/$a"; rm -rf "$W"; mkdir -p "$W/assets"; cp -r www "$W/www"; cp icons/$a.png "$W/assets/icon-only.png"; cp icons/$a.png "$W/assets/icon-foreground.png"; cp icons/$a.png "$W/assets/splash.png"
@@ -65,7 +66,7 @@ JAVA
   printf '\nconfigurations.all { resolutionStrategy { force "androidx.browser:browser:1.8.0" } }\n' >> "$G"
   sed -i -E "s/versionCode [0-9]+/versionCode ${VC}/; s/versionName \"[^\"]*\"/versionName \"${VN}\"/" "$G"
   # الحماية التلقائية في Google Play تتطلب minSdk 24 (أندرويد 7) أو أحدث
-  [ -f android/variables.gradle ] && sed -i -E "s/minSdkVersion = [0-9]+/minSdkVersion = 24/" android/variables.gradle; grep -n "minSdkVersion" android/variables.gradle || true
+  [ -f android/variables.gradle ] && sed -i -E "s/minSdkVersion = [0-9]+/minSdkVersion = 24/; s/compileSdkVersion = [0-9]+/compileSdkVersion = 36/; s/targetSdkVersion = [0-9]+/targetSdkVersion = 36/" android/variables.gradle; grep -q suppressUnsupportedCompileSdk android/gradle.properties 2>/dev/null || echo "android.suppressUnsupportedCompileSdk=36" >> android/gradle.properties; grep -nE "minSdkVersion|targetSdkVersion|compileSdkVersion" android/variables.gradle || true
   node -e "require('sharp')({create:{width:1024,height:1024,channels:3,background:'#ffffff'}}).png().toFile('assets/icon-background.png').catch(()=>process.exit(1))" || true
   npx capacitor-assets generate --android --splashBackgroundColor '#0b1226' || true
   # احتياط: إن بقي ملف الأيقونة المتكيّفة يشير إلى خلفية غير موجودة نستعمل لوناً
