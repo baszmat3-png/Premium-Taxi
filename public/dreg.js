@@ -1,6 +1,8 @@
 /* dreg.js — واجهة دخول الكابتن/الدلفري + التسجيل الكامل بالمستمسكات والفيديو + متابعة الطلب */
 (function(){
 const E=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const DELV=/[?&]app=delivery/.test(location.search);
+if(DELV){try{const m=document.querySelector('link[rel=manifest]');m&&(m.href='/manifest-delivery.webmanifest');const a=document.querySelector('link[rel=apple-touch-icon]');a&&(a.href='/icons/delivery-192.png');document.title='تكسي المتميز - دلفري'}catch(e){}}
 const LS={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const TYPES=[
  {k:'taxi',i:'🚕',t:'كابتن تكسي',d:'سيارة صالون أو SUV بحالة جيدة'},
@@ -58,13 +60,13 @@ const css=document.createElement('style');css.textContent=`
 document.head.appendChild(css);
 
 function login(){const st=LS.get('dapk',null);
- return `<div class="drh"><img class="drl" src="/icons/captain-512.png" alt="" style="background:none;box-shadow:0 14px 40px #f5a30044;padding:0"><h1>تطبيق الكابتن</h1><p>تكسي المتميز — تكسي وتوصيل طعام</p></div>
+ return `<div class="drh"><img class="drl" src="${DELV?'/icons/delivery-512.png':'/icons/captain-512.png'}" alt="" style="background:none;box-shadow:0 14px 40px #f5a30044;padding:0"><h1>${DELV?'تطبيق الدلفري':'تطبيق الكابتن'}</h1><p>تكسي المتميز — تكسي وتوصيل طعام</p></div>
  <div class="drk"><h2>تسجيل الدخول</h2><p class="m">أدخل رمز الكابتن والرمز السري المرسلين لك بعد تفعيل حسابك</p>
  <div class="drf"><span>🆔</span><input id="li" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text" placeholder="رمز الكابتن" value="${E(R.did||'')}"></div>
  <div class="drf"><span>🔒</span><input id="lp" autocapitalize="off" autocorrect="off" spellcheck="false" type="password" placeholder="الرمز السري" value="${E(R.pin||'')}" onkeydown="if(event.key=='Enter')lg()"></div>
  <button class="drb p" onclick="lg()">دخول</button></div>
  <div class="drx">ليس لديك حساب؟</div>
- <button class="drb y" onclick="DREG.start()">🧑‍✈️ سجّل ككابتن تكسي أو دلفري</button>
+ <button class="drb y" onclick="DREG.start()">${DELV?'🛵 سجّل كسائق دلفري':'🧑‍✈️ سجّل ككابتن تكسي أو دلفري'}</button>
  ${st?`<button class="drb g" onclick="DREG.status()">📋 متابعة حالة طلبي</button>`:''}
  <div class="drp"><div><b>💰</b>أرباح يومية</div><div><b>🎁</b>مكافأة ترحيب</div><div><b>🏦</b>سحب كي كارد وزين كاش</div></div>`}
 
@@ -108,7 +110,7 @@ function statusV(){const s=R.st||{};let body;
 
 window.DREG={
  view(v){const V={login,type:typeV,info:infoV,docs:docsV,review:reviewV,done:doneV,status:statusV}[P]||login;v.innerHTML=`<div class="drw"><div class="drc">${V()}</div></div>`},
- go,start(){go(R.rp&&R.ti!=null?R.rp:'type')},
+ go,start(){if(DELV&&R.ti==null){R.ti=1;R.type='delivery';R.veh='bike';save()}go(R.rp&&R.ti!=null?R.rp:'type')},
  pick(i){R.ti=i;R.type=TYPES[i].k;R.veh=TYPES[i].v||'car';save();draw()},
  f(k,v){R.f=R.f||{};R.f[k]=v;save()},
  next2(){const f=R.f||{};if(String(f.n||'').trim().split(/\s+/).length<3)return alert('أدخل الاسم الثلاثي');if(String(f.ph||'').replace(/\D/g,'').length<10)return alert('أدخل رقم هاتف صحيح');if(!f.car||!f.plate)return alert('أدخل نوع المركبة ورقم اللوحة');go('docs')},

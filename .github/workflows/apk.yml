@@ -8,7 +8,7 @@ permissions: {contents: write}
 jobs:
   apk:
     runs-on: ubuntu-24.04
-    strategy: {fail-fast: false, matrix: {app: [customer, captain, restaurant, restpos, owner, support]}}
+    strategy: {fail-fast: false, matrix: {app: [customer, captain, delivery, restaurant, restpos, owner, support]}}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -44,5 +44,5 @@ jobs:
           files: out/*.apk
           fail_on_unmatched_files: false
       - name: Remove old failure logs
-        run: for a in customer captain restaurant restpos owner support; do gh release delete-asset apk-latest log-$a.txt -y -R ${{ github.repository }} || true; done
+        run: for a in customer captain delivery restaurant restpos owner support; do gh release delete-asset apk-latest log-$a.txt -y -R ${{ github.repository }} || true; done
         env: {GH_TOKEN: '${{ github.token }}'}

@@ -9,7 +9,7 @@ permissions: {contents: write}
 jobs:
   aab:
     runs-on: ubuntu-24.04
-    strategy: {fail-fast: false, matrix: {app: [customer, captain, restaurant, restpos]}}
+    strategy: {fail-fast: false, matrix: {app: [customer, captain, delivery, restaurant, restpos]}}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
