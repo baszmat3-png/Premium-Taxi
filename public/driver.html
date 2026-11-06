@@ -37,7 +37,7 @@ body{padding:0;overflow:hidden;background:var(--bg)}[data-app=driver] .tb{displa
 <script>
 auth('driver');
 let dmin=0,pos=null,first=1,sel=null,skip={},menu=0,pg='',known=null,wv={a:'',m:'زين كاش',n:'',w:''},wimg='',snd=localStorage.dsnd!=='0',rt={},pv={},mapK='';
-navigator.geolocation&&navigator.geolocation.watchPosition(p=>{pos={lat:p.coords.latitude,lng:p.coords.longitude};window.PHD=p.coords.heading;window.PSP=p.coords.speed;if(AUTH.pin&&DB.drivers[AUTH.id]){mapUpd();try{navTick(p.coords)}catch(e){}}},()=>{},{enableHighAccuracy:true,maximumAge:5000});
+(window.gpsPerm?gpsPerm():Promise.resolve(true)).then(okp=>{if(!okp)setTimeout(()=>alert(GPSMSG.deny),1500);navigator.geolocation&&navigator.geolocation.watchPosition(p=>{pos={lat:p.coords.latitude,lng:p.coords.longitude};window.PHD=p.coords.heading;window.PSP=p.coords.speed;if(AUTH.pin&&DB.drivers[AUTH.id]){mapUpd();try{navTick(p.coords)}catch(e){}}},()=>{},{enableHighAccuracy:true,maximumAge:5000});});
 const me=()=>DB.drivers[AUTH.id]||{},MIN=()=>DB.cfg.minWd||25000,tod=t=>new Date(t).toDateString()==new Date().toDateString();
 const nv=p=>p?`<a class="btn" style="flex:1" target="_blank" href="${nav(p)}">🧭 ملاحة</a>`:'';
 const rej=(k,id)=>{const o=(k=='orders'?DB.orders:DB.rides)[id];confirm('رفض الطلب؟ سيُحوَّل لأقرب كابتن آخر.'+(k=='orders'&&+DB.cfg.rejFee>0?'\n⚠️ ستُخصم غرامة رفض '+fmt(+DB.cfg.rejFee)+' من محفظتك.':''))&&act(k,id,{did:null,rej:[...(o.rej||[]),AUTH.id],...(k=='rides'?{st:0}:{})})};

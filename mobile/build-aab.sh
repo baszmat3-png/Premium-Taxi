@@ -14,6 +14,7 @@ npm install --no-audit --no-fund --legacy-peer-deps; mkdir -p ../dist
 # مفتاح توقيع ثابت لنسخ APK (حتى لا تتغير بصمة SHA-1 بين البناءات — يحتاجها تسجيل Google)
 if [ "$MODE" = apk ] && [ -s debug.keystore ]; then mkdir -p ~/.android; cp debug.keystore ~/.android/debug.keystore; fi
 # تسجيل الدخول بحساب Google داخل تطبيق الزبون (مكوّن أصلي)
+npm install --no-audit --no-fund --legacy-peer-deps @capacitor/geolocation@^7.0.0 || echo "تعذر تثبيت geolocation"
 npm install --no-audit --no-fund --legacy-peer-deps @capgo/capacitor-social-login@^7.0.0 || echo "تعذر تثبيت social-login — يُبنى بدون تسجيل Google"
 GSJ="$PWD/google-services.json"; if [ -s "$GSJ" ]; then echo "FCM: google-services.json موجود — تفعيل الإشعارات"; npm install --no-audit --no-fund --legacy-peer-deps @capacitor/push-notifications@^7.0.0; else echo "FCM: لا يوجد google-services.json — البناء بدون إشعارات Firebase"; fi
 for a in "${APPS[@]}"; do
