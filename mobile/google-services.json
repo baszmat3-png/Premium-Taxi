@@ -45,6 +45,25 @@
     },
     {
       "client_info": {
+        "mobilesdk_app_id": "1:317235951415:android:561e3fc996aa34e78cccb2",
+        "android_client_info": {
+          "package_name": "com.safra.delivery"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD7vdm6eW_c7RepdacNwZ235oIQTWKla7o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:317235951415:android:2e6fc39e6fa5c1be8cccb2",
         "android_client_info": {
           "package_name": "com.safra.restaurant"
