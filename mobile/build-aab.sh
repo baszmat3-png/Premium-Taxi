@@ -61,6 +61,8 @@ JAVA
   # أحدث SDK يطلبه المتجر
   sed -i -E 's/compileSdkVersion = [0-9]+/compileSdkVersion = 35/; s/targetSdkVersion = [0-9]+/targetSdkVersion = 35/' android/variables.gradle
   G=android/app/build.gradle
+  # بعض المكتبات تسحب androidx.browser 1.9 الذي يحتاج SDK 36 — نثبّت نسخة متوافقة
+  printf '\nconfigurations.all { resolutionStrategy { force "androidx.browser:browser:1.8.0" } }\n' >> "$G"
   sed -i -E "s/versionCode [0-9]+/versionCode ${VC}/; s/versionName \"[^\"]*\"/versionName \"${VN}\"/" "$G"
   node -e "require('sharp')({create:{width:1024,height:1024,channels:3,background:'#ffffff'}}).png().toFile('assets/icon-background.png').catch(()=>process.exit(1))" || true
   npx capacitor-assets generate --android --splashBackgroundColor '#0b1226' || true
