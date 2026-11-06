@@ -14,12 +14,15 @@ npm install --no-audit --no-fund --legacy-peer-deps; mkdir -p ../dist
 GSJ="$PWD/google-services.json"; if [ -s "$GSJ" ]; then echo "FCM: google-services.json موجود — تفعيل الإشعارات"; npm install --no-audit --no-fund --legacy-peer-deps @capacitor/push-notifications@^7.0.0; else echo "FCM: لا يوجد google-services.json — البناء بدون إشعارات Firebase"; fi
 for a in "${APPS[@]}"; do
   W="build/$a"; rm -rf "$W"; mkdir -p "$W/assets"; cp -r www "$W/www"; cp icons/$a.png "$W/assets/icon-only.png"; cp icons/$a.png "$W/assets/icon-foreground.png"; cp icons/$a.png "$W/assets/splash.png"
-  cp package.json "$W/"; ln -s "$PWD/node_modules" "$W/node_modules"; cd "$W"
+  cp package.json "$W/"
+  # التطبيق غير المضاف في مشروع Firebase يُبنى بدون مكتبة الإشعارات (وإلا يتعطل عند التسجيل)
+  if [ -s "$GSJ" ] && ! grep -q '"package_name": "'"${ID[$a]}"'"' "$GSJ"; then echo "FCM: ${ID[$a]} غير مضاف في Firebase — بدون إشعارات"; node -e "const fs=require('fs'),f=process.argv[1],p=JSON.parse(fs.readFileSync(f,'utf8'));for(const k of ['dependencies','devDependencies'])if(p[k])delete p[k]['@capacitor/push-notifications'];fs.writeFileSync(f,JSON.stringify(p))" "$W/package.json"; fi
+  ln -s "$PWD/node_modules" "$W/node_modules"; cd "$W"
   cat > capacitor.config.json <<JSON
 {"appId":"${ID[$a]}","appName":"${NAME[$a]}","webDir":"www","server":{"url":"${SERVER_URL}${PAGE[$a]}","cleartext":false,"androidScheme":"https","allowNavigation":["$(echo "$SERVER_URL" | sed 's#https\?://##')"]},"android":{"allowMixedContent":false}}
 JSON
   npx cap add android
-  if [ -s "$GSJ" ]; then cp "$GSJ" android/app/google-services.json; grep -q '"package_name": "'"${ID[$a]}"'"' "$GSJ" || echo "تحذير: ${ID[$a]} غير مضاف في مشروع Firebase — لن تعمل إشعاراته"; fi
+  if [ -s "$GSJ" ] && grep -q '"package_name": "'"${ID[$a]}"'"' "$GSJ"; then cp "$GSJ" android/app/google-services.json; echo "FCM: مفعّل لـ ${ID[$a]}"; fi
   M=android/app/src/main/AndroidManifest.xml
   P='<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/><uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/><uses-permission android:name="android.permission.POST_NOTIFICATIONS"/><uses-permission android:name="android.permission.VIBRATE"/>'
   [ "$a" = captain ] || [ "$a" = delivery ] && P="$P"'<uses-permission android:name="android.permission.CAMERA"/><uses-permission android:name="android.permission.RECORD_AUDIO"/><uses-feature android:name="android.hardware.camera" android:required="false"/>'
