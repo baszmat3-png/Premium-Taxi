@@ -58,7 +58,7 @@ const css=document.createElement('style');css.textContent=`
 document.head.appendChild(css);
 
 function login(){const st=LS.get('dapk',null);
- return `<div class="drh"><img class="drl" src="/icons/logo.png" alt="" style="background:none;box-shadow:0 14px 40px #f5a30044;padding:0"><h1>تطبيق الكابتن</h1><p>تكسي المتميز — تكسي وتوصيل طعام</p></div>
+ return `<div class="drh"><img class="drl" src="/icons/captain-512.png" alt="" style="background:none;box-shadow:0 14px 40px #f5a30044;padding:0"><h1>تطبيق الكابتن</h1><p>تكسي المتميز — تكسي وتوصيل طعام</p></div>
  <div class="drk"><h2>تسجيل الدخول</h2><p class="m">أدخل رمز الكابتن والرمز السري المرسلين لك بعد تفعيل حسابك</p>
  <div class="drf"><span>🆔</span><input id="li" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text" placeholder="رمز الكابتن" value="${E(R.did||'')}"></div>
  <div class="drf"><span>🔒</span><input id="lp" autocapitalize="off" autocorrect="off" spellcheck="false" type="password" placeholder="الرمز السري" value="${E(R.pin||'')}" onkeydown="if(event.key=='Enter')lg()"></div>
