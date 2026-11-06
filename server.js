@@ -121,7 +121,7 @@ const rl=h=>{const k=h['x-role']+'|'+(h['x-id']||h['x-ip']),n=Date.now(),e=RL[k]
 setInterval(()=>{const n=Date.now();for(const k in LK)if(n-LK[k].t>6e5)delete LK[k];for(const k in RL)if(n-RL[k].t>6e4)delete RL[k]},6e5).unref();
 const ok0=h=>{const r=h['x-role'],p=h['x-pin'],i=h['x-id'];
  if((r=='rest'&&String(i).startsWith('demo_r')&&!db.rests[i])||(r=='driver'&&String(i).startsWith('demo_d')&&!db.drivers[i])||(r=='support'&&p=='3333'&&!db.staff.demo_st)){try{if(/^demo_[rd][0-9]$/.test(String(i))||r=='support'){demoSeed();console.log('[DEMO] أُنشئت البيانات التجريبية تلقائياً عند الدخول')}}catch(e){}}
- return r=='customer'?!!i:r=='admin'?eq(p,ADMIN):r=='support'?Object.values(db.staff).some(s=>eq(s.pin,p)):r=='rest'?!!db.rests[i]&&eq(db.rests[i].pin,p):r=='driver'?!!db.drivers[i]&&eq(db.drivers[i].pin,p)&&(!db.drivers[i].tfa||sid(h['x-token'])=='d:'+i):false};
+ return r=='customer'?!!i:r=='admin'?eq(p,ADMIN):r=='support'?Object.values(db.staff).some(s=>!s.off&&eq(s.pin,p)):r=='rest'?!!db.rests[i]&&eq(db.rests[i].pin,p):r=='driver'?!!db.drivers[i]&&eq(db.drivers[i].pin,p)&&(!db.drivers[i].tfa||sid(h['x-token'])=='d:'+i):false};
 const ok=h=>{const r=h['x-role'];if(r=='customer')return ok0(h);const k=(h['x-ip']||'')+'|'+r+'|'+(r=='admin'||r=='support'?'':(h['x-id']||''));if(lk(k))return false;const g=ok0(h),d=r=='driver'&&db.drivers[h['x-id']],bad=!g&&!!h['x-pin']&&!(d&&eq(d.pin,h['x-pin']));lk(k,g?0:bad?1:undefined);return g};
 if(ADMIN=='1234')console.warn('[SECURITY] ADMIN_PIN الافتراضي 1234 مستخدم! عيّن ADMIN_PIN قويًا في متغيرات البيئة.');
 // ---- TOTP (RFC 6238) للمصادقة الثنائية ----
@@ -130,7 +130,12 @@ const b32e=b=>{let t='',o='';for(const x of b)t+=x.toString(2).padStart(8,'0');f
 const b32d=x=>{let t='';for(const c of x)t+=Math.max(0,B32.indexOf(c)).toString(2).padStart(5,'0');const o=[];for(let i=0;i+8<=t.length;i+=8)o.push(parseInt(t.slice(i,i+8),2));return Buffer.from(o)};
 const hotp=(k,c)=>{const b=Buffer.alloc(8);b.writeBigUInt64BE(BigInt(c));const h=cr.createHmac('sha1',b32d(k)).update(b).digest(),o=h[19]&15;return String((h.readUInt32BE(o)&0x7fffffff)%1e6).padStart(6,'0')};
 const totp=(k,code,d)=>{code=String(code||'').replace(/\s/g,'');if(!k||!/^\d{6}$/.test(code))return 0;const st=Math.floor(Date.now()/3e4);for(let i=-1;i<=1;i++){const s=st+i;if(s>(d.tl||0)&&eq(hotp(k,s),code)){d.tl=s;return 1}}return 0};
-const audit=(h,what,id,amt)=>{db.audit=db.audit||[];db.audit.push({at:Date.now(),role:h['x-role'],by:h['x-id']||'',ip:h['x-ip']||'',what,id,amt:amt||0});if(db.audit.length>3000)db.audit.splice(0,db.audit.length-3000)};
+/* صلاحيات الموظفين: perm={قسم:1 عرض | 2 عرض وتعديل}; موظف بدون perm = صلاحيات كاملة (توافق مع القديم) */
+const PSEC=['D','A','l','j','o','r','d','h','v','w','z','q','t','u','a','k'],PCOL={orders:'o',rides:'r',drivers:'d',topups:'w',ctop:'z',wd:'q',tickets:'t',apps:'a',cardorders:'k',chat:'j'};
+const stOf=h=>h&&h['x-role']=='support'?Object.values(db.staff||{}).find(s=>!s.off&&eq(s.pin,h['x-pin']||'')):null;
+const pLv=(st,sec)=>{if(!st)return 0;if(!st.perm)return sec=='q'?0:2;return +st.perm[sec]||0};
+const cleanPerm=v=>{if(!v||typeof v!='object')return undefined;const o={};PSEC.forEach(k=>{const x=+v[k]|0;if(x>0)o[k]=Math.min(2,x)});return o};
+const audit=(h,what,id,amt)=>{db.audit=db.audit||[];db.audit.push({at:Date.now(),role:h['x-role'],by:h['x-role']=='support'?((stOf(h)||{}).n||'دعم'):(h['x-id']||''),ip:h['x-ip']||'',what,id,amt:amt||0});if(db.audit.length>3000)db.audit.splice(0,db.audit.length-3000)};
 const clean=(o,f)=>Object.fromEntries(Object.entries(o).map(([k,v])=>{v={...v};f.forEach(x=>delete v[x]);return[k,v]}));
 const flt=(c,fn)=>Object.fromEntries(Object.entries(db[c]).filter(([,v])=>fn(v)));
 // ---- فهارس تُحدَّث تدريجيًا: كل سجل يتغيّر يُعاد فهرسته وحده (O(1)) بدل إعادة بناء كل شيء ----
@@ -163,7 +168,8 @@ const rsOf=I=>frag('rs',()=>clean(db.rests,['pin']));
 const chatV=()=>Object.fromEntries(Object.values(db.chat||{}).sort((a,b)=>b.at-a.at).slice(0,200).map(t=>[t.id,{...t,msgs:(t.msgs||[]).slice(-60)}]));
 function view(h){const r=h['x-role'],i=h['x-id'],I=ix();
  if(r=='admin')return{...db,codes:codeSum(),chat:chatV()};
- if(r=='support')return{...db,customers:clean(db.customers,['devs','sess','att']),rests:rsOf(I),drivers:clean(db.drivers,['pin','tfa','tfaP','tl']),staff:{},exp:{},codes:{},chat:chatV(),cards:clean(db.cards,['cost','v']),cardorders:clean(db.cardorders,['cost']),vars:PV()};
+ if(r=='support'){const st=stOf(h),L=x=>pLv(st,x)>0,o={...db,customers:clean(db.customers,['devs','sess','att']),rests:rsOf(I),drivers:clean(db.drivers,['pin','tfa','tfaP','tl']),staff:{},exp:{},codes:{},chat:L('j')?chatV():{},cards:clean(db.cards,['cost','v']),cardorders:L('k')?clean(db.cardorders,['cost']):{},vars:PV(),audit:undefined,sme:st?{n:st.n,perm:st.perm||null}:null};
+  if(!L('w'))o.topups={};if(!L('z'))o.ctop={};if(!L('q'))o.wd={};if(!L('t'))o.tickets={};if(!L('a'))o.apps={};if(!L('w')&&!L('d'))o.tx={};if(!L('z')&&!L('u'))o.ctx={};return o}
  if(r=='rest'){const os=I.ro[i]||E0,ids=[...new Set(Object.values(os).map(v=>v.did).filter(d=>d&&db.drivers[d]))];return{cfg:pubc(db.cfg),rests:{[i]:db.rests[i]},orders:os,drivers:Object.fromEntries(ids.map(d=>{const x=db.drivers[d];return[d,{id:d,n:x.n,ph:x.ph,car:x.car,loc:x.loc,locAt:x.locAt}]}))}}
  if(r=='driver'){const me=db.drivers[i],dm=me?(()=>{const x={...me};['pin','tfa','tfaP','tl'].forEach(f=>delete x[f]);x.tfaOn=me.tfa?1:0;return x})():undefined;
   return{lsug:lsOpen(),cfg:{...db.cfg,vars:PV()},topups:I.dt[i]||E0,tx:I.dx[i]||E0,wd:I.dw[i]||E0,incw:I.di[i]||E0,rests:rsOf(I),orders:clean({...(I.do[i]||E0),...I.pO},['rnote']),rides:clean({...(I.dr[i]||E0),...I.pR},['rnote']),lines:I.ln[i]||E0,lreqs:I.dl[i]||E0,drivers:{[i]:dm}}}
@@ -311,6 +317,9 @@ function setLine(h,k,id,v,old){const r=h['x-role'],i=h['x-id'];if(!/^[A-Za-z0-9_
  return 0}
 function set(h,b){const{k,id}=b;let v=b.v;const r=h['x-role'],i=h['x-id'];
  if(!W[r]||!W[r].includes(k)||!id)return 0;
+ if(r=='support'){const st=stOf(h);if(!st||pLv(st,PCOL[k]||'')<2){WHY='لا تملك صلاحية التعديل في هذا القسم';return 0}}
+ if(r=='admin'&&k=='staff'){if(v==null){if(!db.staff[id])return 0;delete db.staff[id];audit(h,'staff-del',id);return 1}const o=db.staff[id]||{id};const n=String(v.n??o.n??'').trim().slice(0,60),pin=String(v.pin??o.pin??'').trim().slice(0,40);if(!n||pin.length<4)return 0;if(eq(pin,ADMIN)||Object.values(db.staff).some(x=>x.id!=id&&x.pin==pin)){WHY='الرمز السري مستخدم لموظف آخر — اختر رمزًا مختلفًا';return 0}
+  db.staff[id]={...o,id,n,pin,ph:String(v.ph??o.ph??'').slice(0,30),off:(v.off??o.off)?1:0,perm:'perm' in v?cleanPerm(v.perm):o.perm,role:String(v.role??o.role??'').slice(0,40),at:o.at||Date.now()};audit(h,'staff-set',id);return 1}
  const old=db[k]&&db[k][id],mn=db.cfg.minBal;if(k=='lines'||k=='lreqs')return setLine(h,k,id,v,old);
  if((k=='rides'||k=='orders')&&old&&v&&'msg' in v){const me=r=='customer'&&old.cid==i?'c':r=='driver'&&old.did==i?'d':null;if(!me||!old.did||!(old.st>=1&&old.st<4))return 0;const t=String(v.msg||'').trim().slice(0,400);if(!t)return 0;if((old.cm||[]).length>=150)return 0;old.cm=(old.cm||[]).concat({f:me,t,at:Date.now()});try{PUSH&&PUSH.send&&0}catch(e){}return 1}
  if(k=='cdev'){if(r!='admin'||!v)return 0;const c=db.customers[id];if(!c)return 0;c.devs=c.devs||{};const x=c.devs[S(v.dev,64)];
@@ -349,8 +358,8 @@ function set(h,b){const{k,id}=b;let v=b.v;const r=h['x-role'],i=h['x-id'];
   if(!old||!v||old.st!=0)return 0;if(v.st==1){const a=rAmt(v,old),no=rcNo();ccredit(old.cid,a,'شحن المحفظة ('+(old.m=='zain'?'زين كاش':'ماستر كارد')+') • وصل '+no);audit(h,'ctop-ok',id,a);db.ctop[id]={...old,st:1,by:r,ok:Date.now(),ramt:a,rno:no,rnote:String(v.rnote||'').slice(0,200)};try{PUSH.send('customer',old.cid,{t:'✅ تم شحن محفظتك',b:'أُضيف '+a.toLocaleString('en-US')+' د.ع • وصل '+no,u:'/customer.html',tag:'ct'+id})}catch(e){}return 1}if(v.st==-1){db.ctop[id]={...old,st:-1,why:String(v.why||'').slice(0,200)};return 1}return 0}
  if(k=='wd'){
   if(r=='driver'){const d=db.drivers[i];if(old||!v||!d)return 0;const a=Math.round(+v.amt),ac=String(v.acc||'').trim().slice(0,60);if(!(a>=(db.cfg.minWd||25000))||a>(d.bal||0)||!ac||(db.cfg.req2fa&&!d.tfa))return 0;const mm=String(v.m||'').slice(0,40);if(!['كي كارد','زين كاش'].includes(mm))return 0;const an=String(v.an||'').trim().slice(0,80),bc=String(v.bc||'').slice(0,200);if(!an)return 0;if(Object.values(db.wd).some(x=>x.did==i&&x.st==0))return 0;db.wd[id]={id,did:i,amt:a,m:mm,acc:ac,an,bc,st:0,at:Date.now()};return 1}
-  if(r!='admin'||!v)return 0;
-  if(!old){const d=db.drivers[v.did],a=Math.round(+v.amt);if(!d||!(a>0)||a>(d.bal||0))return 0;credit(d.id,-a,'سحب رصيد ('+String(v.m||'').slice(0,40)+')');db.wd[id]={id,did:d.id,amt:a,m:String(v.m||'').slice(0,40),acc:String(v.acc||'').slice(0,60),st:1,by:'admin',at:Date.now(),ok:Date.now(),ref:String(v.ref||'').slice(0,100),rimg:rImg(v.rimg),rno:rcNo()};return 1}
+  if(!(r=='admin'||(r=='support'&&pLv(stOf(h),'q')>=2))||!v)return 0;
+  if(!old){if(r!='admin')return 0;const d=db.drivers[v.did],a=Math.round(+v.amt);if(!d||!(a>0)||a>(d.bal||0))return 0;credit(d.id,-a,'سحب رصيد ('+String(v.m||'').slice(0,40)+')');db.wd[id]={id,did:d.id,amt:a,m:String(v.m||'').slice(0,40),acc:String(v.acc||'').slice(0,60),st:1,by:'admin',at:Date.now(),ok:Date.now(),ref:String(v.ref||'').slice(0,100),rimg:rImg(v.rimg),rno:rcNo()};return 1}
   if(old.st!=0)return 0;
   if(v.st==1){const d=db.drivers[old.did];if(!d||(d.bal||0)<old.amt)return 0;credit(old.did,-old.amt,'سحب رصيد ('+(old.m||'')+')');audit(h,'wd-ok',id,old.amt);const no=rcNo();db.wd[id]={...old,st:1,by:r,ok:Date.now(),ref:String(v.ref||'').slice(0,100),rimg:rImg(v.rimg),rno:no};try{PUSH.send('driver',old.did,{t:'💸 تم تحويل سحبك',b:old.amt.toLocaleString('en-US')+' د.ع إلى '+(old.m||'')+' • وصل '+no,u:'/driver.html',tag:'wd'+id})}catch(e){}return 1}
   if(v.st==-1){db.wd[id]={...old,st:-1,why:String(v.why||'').slice(0,200)};return 1}
