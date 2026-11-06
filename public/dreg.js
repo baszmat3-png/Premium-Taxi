@@ -4,12 +4,13 @@ const E=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','
 const DELV=/[?&]app=delivery/.test(location.search);
 if(DELV){try{const m=document.querySelector('link[rel=manifest]');m&&(m.href='/manifest-delivery.webmanifest');const a=document.querySelector('link[rel=apple-touch-icon]');a&&(a.href='/icons/delivery-192.png');document.title='تكسي المتميز - دلفري'}catch(e){}}
 const LS={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
-const TYPES=[
- {k:'taxi',i:'🚕',t:'كابتن تكسي',d:'سيارة صالون أو SUV بحالة جيدة'},
+const ALLT=[
+ {k:'taxi',i:'🚕',t:'كابتن تكسي برو',d:'سيارة صالون أو SUV بحالة جيدة'},
  {k:'delivery',v:'bike',i:'🛵',t:'دلفري دراجة',d:'توصيل طلبات المطاعم بالدراجة النارية'},
  {k:'delivery',v:'car',i:'🚗',t:'دلفري سيارة',d:'توصيل طلبات المطاعم بالسيارة'},
  {k:'both',i:'⚡',t:'تكسي + دلفري',d:'استقبل الرحلات وطلبات التوصيل معاً'},
  {k:'line',i:'🚐',t:'كابتن خطوط',d:'ستاركس أو كيا 10–11 راكب لخطوط الدوائر والجامعات'}];
+const TYPES=ALLT.filter(t=>DELV?t.k=='delivery':(t.k=='taxi'||t.k=='line'));
 const D={
  idf:['🪪','الهوية الوطنية — الوجه الأمامي','صورة واضحة كاملة الحواف','i'],
  idb:['🪪','الهوية الوطنية — الوجه الخلفي','صورة واضحة كاملة الحواف','i'],
@@ -60,13 +61,13 @@ const css=document.createElement('style');css.textContent=`
 document.head.appendChild(css);
 
 function login(){const st=LS.get('dapk',null);
- return `<div class="drh"><img class="drl" src="${DELV?'/icons/delivery-512.png':'/icons/captain-512.png'}" alt="" style="background:none;box-shadow:0 14px 40px #f5a30044;padding:0"><h1>${DELV?'تطبيق الدلفري':'تطبيق الكابتن'}</h1><p>تكسي المتميز — تكسي وتوصيل طعام</p></div>
+ return `<div class="drh"><img class="drl" src="${DELV?'/icons/delivery-512.png':'/icons/captain-512.png'}" alt="" style="background:none;box-shadow:0 14px 40px #f5a30044;padding:0"><h1>${DELV?'تطبيق الدلفري':'كابتن تكسي برو'}</h1><p>تكسي المتميز — تكسي وتوصيل طعام</p></div>
  <div class="drk"><h2>تسجيل الدخول</h2><p class="m">أدخل رمز الكابتن والرمز السري المرسلين لك بعد تفعيل حسابك</p>
  <div class="drf"><span>🆔</span><input id="li" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text" placeholder="رمز الكابتن" value="${E(R.did||'')}"></div>
  <div class="drf"><span>🔒</span><input id="lp" autocapitalize="off" autocorrect="off" spellcheck="false" type="password" placeholder="الرمز السري" value="${E(R.pin||'')}" onkeydown="if(event.key=='Enter')lg()"></div>
  <button class="drb p" onclick="lg()">دخول</button></div>
  <div class="drx">ليس لديك حساب؟</div>
- <button class="drb y" onclick="DREG.start()">${DELV?'🛵 سجّل كسائق دلفري':'🧑‍✈️ سجّل ككابتن تكسي أو دلفري'}</button>
+ <button class="drb y" onclick="DREG.start()">${DELV?'🛵 سجّل كسائق دلفري':'🚕 سجّل ككابتن تكسي أو خطوط'}</button>
  ${st?`<button class="drb g" onclick="DREG.status()">📋 متابعة حالة طلبي</button>`:''}
  <div class="drp"><div><b>💰</b>أرباح يومية</div><div><b>🎁</b>مكافأة ترحيب</div><div><b>🏦</b>سحب كي كارد وزين كاش</div></div>`}
 
@@ -80,7 +81,7 @@ function typeV(){return top('التسجيل',"DREG.go('login')")+steps(1)+`<div 
 
 function infoV(){const t=TYPES[R.ti]||TYPES[0],f=R.f||{},car=kindOf(R)=='car'||t.v=='car';
  const I=(k,ic,ph,ty,ex)=>`<div class="drf"><span>${ic}</span><input id="rf_${k}" ${ty?`type="${ty}"`:''} ${ex||''} placeholder="${ph}" value="${E(f[k]||'')}" oninput="DREG.f('${k}',this.value)"></div>`;
- return top('المعلومات',"DREG.go('type')")+steps(2)+`<div class="drk"><h2>${t.i} ${t.t}</h2><p class="m">المعلومات الشخصية</p>
+ return top('المعلومات',TYPES.length==1?"DREG.go('login')":"DREG.go('type')")+steps(2)+`<div class="drk"><h2>${t.i} ${t.t}</h2><p class="m">المعلومات الشخصية</p>
  ${I('n','👤','الاسم الثلاثي كما في الهوية')}${I('ph','📱','رقم الهاتف (واتساب)','tel','inputmode="tel" dir="ltr"')}${I('city','📍','المدينة / المنطقة')}
  <p class="m" style="margin-top:14px">معلومات المركبة</p>
  ${I('car','🚘',car?'نوع السيارة وموديلها (مثال: كيا سيراتو)':'نوع الدراجة (مثال: هوندا 150)')}${I('year','📅','سنة الصنع','','inputmode="numeric" maxlength="4"')}${I('color','🎨','اللون')}${I('plate','🔢','رقم اللوحة والمحافظة')}
@@ -110,7 +111,7 @@ function statusV(){const s=R.st||{};let body;
 
 window.DREG={
  view(v){const V={login,type:typeV,info:infoV,docs:docsV,review:reviewV,done:doneV,status:statusV}[P]||login;v.innerHTML=`<div class="drw"><div class="drc">${V()}</div></div>`},
- go,start(){if(DELV&&R.ti==null){R.ti=1;R.type='delivery';R.veh='bike';save()}go(R.rp&&R.ti!=null?R.rp:'type')},
+ go,start(){if(R.ti!=null&&!TYPES[R.ti]){R.ti=null;R.rp=null}if(TYPES.length==1&&R.ti==null){DREG.pick(0);return go('info')}go(R.rp&&R.ti!=null?R.rp:'type')},
  pick(i){R.ti=i;R.type=TYPES[i].k;R.veh=TYPES[i].v||'car';save();draw()},
  f(k,v){R.f=R.f||{};R.f[k]=v;save()},
  next2(){const f=R.f||{};if(String(f.n||'').trim().split(/\s+/).length<3)return alert('أدخل الاسم الثلاثي');if(String(f.ph||'').replace(/\D/g,'').length<10)return alert('أدخل رقم هاتف صحيح');if(!f.car||!f.plate)return alert('أدخل نوع المركبة ورقم اللوحة');go('docs')},
