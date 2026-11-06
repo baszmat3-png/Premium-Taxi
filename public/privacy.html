@@ -77,7 +77,7 @@ a{color:var(--ac)}ul{padding-inline-start:22px}li{margin:4px 0}.btn{display:inli
 
 <h2>9. التعديلات</h2>
 <p>قد نحدّث هذه السياسة، وننشر النسخة الجديدة هنا مع تاريخ التحديث، ونبلغك داخل التطبيق عند التغييرات الجوهرية.</p>
-</main>
+<p class="mu"><a href="/terms.html">شروط الخدمة</a> • <a href="/delete-account.html">حذف الحساب</a></p></main>
 <script>
 fetch('/api/legal').then(r=>r.json()).then(L=>{document.querySelectorAll('[data-l]').forEach(e=>{const v=L[e.dataset.l];if(!v)return;const t=(e.dataset.pre||'')+v;if(e.dataset.link=='mailto'){e.innerHTML='';const a=document.createElement('a');a.href='mailto:'+v;a.textContent=v;e.appendChild(a)}else e.textContent=t})}).catch(()=>{});
 </script>
