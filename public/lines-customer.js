@@ -7,7 +7,7 @@ const SV=[['ac','❄️ تبريد'],['heat','🔥 تدفئة'],['net','📶 إ�
 const LNQ=window.LNQ={tab:'lines',f:'all',q:''};
 
 (function(){const s=document.createElement('style');s.textContent=
- 'html{overflow-x:hidden}@supports(overflow:clip){html{overflow-x:clip}}.lac{margin:-4px 0 8px;border:1px solid rgba(127,127,127,.3);border-radius:12px;overflow:hidden;background:var(--card,#fff);box-shadow:0 6px 18px #0003}.laci{display:flex;gap:10px;align-items:flex-start;width:100%;padding:10px 12px;text-align:start;background:none;border:0;border-bottom:1px solid rgba(127,127,127,.18);color:inherit;font:inherit;cursor:pointer;margin:0;min-height:0}.laci:last-child{border:0}.laci b{display:block;font-size:15px}.laci small{display:block;opacity:.7;font-size:12.5px}.lacm{padding:10px 12px;opacity:.75;font-size:14px}.lnc{display:inline-block;padding:2px 10px;border-radius:99px;background:rgba(127,127,127,.16);font-size:12px;margin:2px}.lnc.a{background:var(--pr);color:#fff}'+
+ 'html{overflow-x:hidden}@supports(overflow:clip){html{overflow-x:clip}}.lnhd{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0}.lnhd .tag{margin:0;white-space:nowrap;position:static;float:none}.lnrt{display:block;width:100%;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:anywhere;line-height:1.5;font-size:17px}.lac{margin:-4px 0 8px;border:1px solid rgba(127,127,127,.3);border-radius:12px;overflow:hidden;background:var(--card,#fff);box-shadow:0 6px 18px #0003}.laci{display:flex;gap:10px;align-items:flex-start;width:100%;padding:10px 12px;text-align:start;background:none;border:0;border-bottom:1px solid rgba(127,127,127,.18);color:inherit;font:inherit;cursor:pointer;margin:0;min-height:0}.laci:last-child{border:0}.laci b{display:block;font-size:15px}.laci small{display:block;opacity:.7;font-size:12.5px}.lacm{padding:10px 12px;opacity:.75;font-size:14px}.lnc{display:inline-block;padding:2px 10px;border-radius:99px;background:rgba(127,127,127,.16);font-size:12px;margin:2px}.lnc.a{background:var(--pr);color:#fff}'+
  '.lni{height:130px;border-radius:16px;background:#8883 center/cover;margin-bottom:10px}'+
  '.lnm{position:fixed;inset:0;z-index:9000;background:var(--bg);overflow:auto;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 40px}.lnm>div{max-width:560px;margin:auto}'+
  '.lnmap{height:240px;border-radius:16px;overflow:hidden;margin:8px 0}'+
@@ -19,7 +19,7 @@ const svc=L=>SV.filter(([k])=>L.svc&&L.svc[k]).map(x=>x[1]).join(' • ')||'—'
 
 function card(L){
  return `<div class="card">${L.img?`<div class="lni" style="background-image:url('${esc(L.img)}')"></div>`:''}
- <div class="row sp" style="gap:8px;align-items:flex-start;flex-wrap:nowrap;min-width:0"><b style="flex:1;min-width:0;overflow-wrap:anywhere">${esc(L.fa)} ← ${esc(L.ta)}</b><span class="tag ${L.scope=='out'?'w':'on'}" style="flex:none;white-space:nowrap;margin:0">${L.scope=='out'?'خارج المحافظة':'داخل المحافظة'}</span></div>
+ <div class="lnhd"><span class="tag ${L.scope=='out'?'w':'on'}">${L.scope=='out'?'🛣️ خارج المحافظة':'🏙️ داخل المحافظة'}</span><b class="lnrt">${esc(L.fa)} ← ${esc(L.ta)}</b></div>
  <div class="mu">🚐 ${esc(L.car||'ستاركس')}${L.color?' • '+esc(L.color):''}${L.year?' • '+esc(L.year):''} • ${L.seats} مقعد • <b class="${L.free>0?'on':'off'}">${L.free>0?'متاح '+L.free:'مكتمل'}</b></div>
  <div>${days(L)}</div>
  <div class="mu">🕖 الذهاب ${esc(L.t1||'—')}${L.t2?' • العودة '+esc(L.t2):''}</div>
