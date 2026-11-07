@@ -8,6 +8,8 @@ cd "$(dirname "$0")"; SERVER_URL="${SERVER_URL%/}"; [ -n "$KS_FILE" ] && [ -e "$
 declare -A ID=([customer]=com.safra.customer [delivery]=com.safra.delivery [captain]=com.safra.captain [restaurant]=com.safra.restaurant [restpos]=com.safra.restpos [owner]=com.safra.owner [support]=com.safra.support)
 declare -A NAME=([customer]="تكسي المتميز" [delivery]="تكسي المتميز دلفري" [captain]="تكسي المتميز كابتن" [restaurant]="تكسي المتميز المطعم" [restpos]="جهاز طلبات المطعم" [owner]="تكسي المتميز المالك" [support]="تكسي المتميز الدعم")
 declare -A PAGE=([customer]=/customer.html [delivery]="/driver.html?app=delivery" [captain]=/driver.html [restaurant]=/rest.html [restpos]=/restpos.html [owner]="/panel.html?r=admin" [support]="/panel.html?r=support")
+[ -n "${DELIVERY_PKG:-}" ] && ID[delivery]="$DELIVERY_PKG"  # نشر تطبيق الدلفري بحزمة أخرى (مثل com.rioiraq.express)
+OUTTAG="${OUT_TAG:-}"
 APPS=("$@"); [ ${#APPS[@]} -eq 0 ] && APPS=(customer captain delivery restaurant restpos)
 npm install --no-audit --no-fund --legacy-peer-deps; mkdir -p ../dist
 # إشعارات Firebase (تصل والتطبيق مغلق): تُفعَّل فقط إذا وُجد ملف google-services.json — بدونه يتعطل التطبيق عند التسجيل
@@ -78,7 +80,7 @@ JAVA
    (cd android && ./gradlew bundleRelease --no-daemon -q)
    AAB=$(find android/app/build/outputs/bundle -name '*.aab' | head -1)
    [ -n "$KS_PASS" ] && [ -s "$KS_FILE" ] && jarsigner -sigalg SHA256withRSA -digestalg SHA-256 -keystore "$KS_FILE" -storepass "$KS_PASS" -keypass "$KEY_PASS" "$AAB" "$KS_ALIAS"
-   cp "$AAB" "../../../dist/taxi-mutamayyiz-$a-$VN.aab"
+   cp "$AAB" "../../../dist/taxi-mutamayyiz-$a$OUTTAG-$VN.aab"
   fi
   cd ../..
 done
