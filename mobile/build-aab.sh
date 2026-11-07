@@ -56,6 +56,53 @@ public class MainActivity extends BridgeActivity implements ModifiedMainActivity
 }
 JAVA
    echo "Google: MainActivity معدّل لتسجيل Google"; fi
+  # جهاز طلبات المطعم: صوت الجهاز لا ينزل عن النصف ولا يُكتم (حتى لا تفوت الطلبات)
+  if [ "$a" = restpos ]; then MA=$(find android/app/src/main/java -name MainActivity.java | head -1); PK=$(sed -n 's/^package \(.*\);/\1/p' "$MA")
+   cat > "$MA" <<JAVA
+package ${PK};
+import android.content.Context;
+import android.database.ContentObserver;
+import android.media.AudioManager;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.provider.Settings;
+import android.view.KeyEvent;
+import com.getcapacitor.BridgeActivity;
+public class MainActivity extends BridgeActivity {
+  private ContentObserver vo;
+  private void floorVol() {
+    try {
+      AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+      if (am == null) return;
+      int mx = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC), min = (mx + 1) / 2;
+      if (am.isStreamMute(AudioManager.STREAM_MUSIC)) am.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0);
+      if (am.getStreamVolume(AudioManager.STREAM_MUSIC) < min) am.setStreamVolume(AudioManager.STREAM_MUSIC, min, 0);
+    } catch (Exception e) {}
+  }
+  @Override
+  public void onCreate(Bundle b) {
+    super.onCreate(b);
+    setVolumeControlStream(AudioManager.STREAM_MUSIC);
+    floorVol();
+    vo = new ContentObserver(new Handler(Looper.getMainLooper())) { @Override public void onChange(boolean s) { floorVol(); } };
+    try { getContentResolver().registerContentObserver(Settings.System.CONTENT_URI, true, vo); } catch (Exception e) {}
+  }
+  @Override
+  public void onResume() { super.onResume(); floorVol(); }
+  @Override
+  public void onDestroy() { try { if (vo != null) getContentResolver().unregisterContentObserver(vo); } catch (Exception e) {} super.onDestroy(); }
+  @Override
+  public boolean dispatchKeyEvent(KeyEvent e) {
+    int k = e.getKeyCode();
+    if (k == KeyEvent.KEYCODE_VOLUME_MUTE) return true;
+    boolean r = super.dispatchKeyEvent(e);
+    if (k == KeyEvent.KEYCODE_VOLUME_DOWN) floorVol();
+    return r;
+  }
+}
+JAVA
+   echo "restpos: حد أدنى للصوت 50%"; fi
   if [ -s "$GSJ" ] && grep -q '"package_name": "'"${ID[$a]}"'"' "$GSJ"; then cp "$GSJ" android/app/google-services.json; echo "FCM: مفعّل لـ ${ID[$a]}"; fi
   M=android/app/src/main/AndroidManifest.xml
   P='<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/><uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/><uses-permission android:name="android.permission.POST_NOTIFICATIONS"/><uses-permission android:name="android.permission.VIBRATE"/>'
