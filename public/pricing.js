@@ -108,9 +108,16 @@ function deliveryFee(km, cfg) {
   return x > 0 ? Math.min(f, Math.max(x, p)) : f;
 }
 
+/** رسوم الخدمة على طلب الطعام (للتطبيق): مبلغ ثابت svc + نسبة svcP% من الأصناف بعد الخصم */
+function serviceFee(sub, cfg) {
+  const c = cfg || {}, a = Math.max(0, +c.svc || 0), p = Math.max(0, +c.svcP || 0), s = Math.max(0, +sub || 0);
+  if (!a && !p) return 0;
+  return Math.ceil((a + s * p / 100) / 250) * 250;
+}
+
 // تصدير للمتصفح وNode
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { calcPrice, formatPrice, PRICING, peakMult, isOutstationKm, rideFare, deliveryFee };
+  module.exports = { calcPrice, formatPrice, PRICING, peakMult, isOutstationKm, rideFare, deliveryFee, serviceFee };
 }
 if (typeof window !== "undefined") {
   window.calcPrice = calcPrice;
@@ -120,6 +127,7 @@ if (typeof window !== "undefined") {
   window.isOutstationKm = isOutstationKm;
   window.rideFare = rideFare;
   window.deliveryFee = deliveryFee;
+  window.serviceFee = serviceFee;
 }
 
 // ------------------------------------------------------------
