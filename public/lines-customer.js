@@ -7,7 +7,7 @@ const SV=[['ac','❄️ تبريد'],['heat','🔥 تدفئة'],['net','📶 إ�
 const LNQ=window.LNQ={tab:'lines',f:'all',q:''};
 
 (function(){const s=document.createElement('style');s.textContent=
- '.lnc{display:inline-block;padding:2px 10px;border-radius:99px;background:rgba(127,127,127,.16);font-size:12px;margin:2px}.lnc.a{background:var(--pr);color:#fff}'+
+ 'html{overflow-x:hidden}@supports(overflow:clip){html{overflow-x:clip}}.lnc{display:inline-block;padding:2px 10px;border-radius:99px;background:rgba(127,127,127,.16);font-size:12px;margin:2px}.lnc.a{background:var(--pr);color:#fff}'+
  '.lni{height:130px;border-radius:16px;background:#8883 center/cover;margin-bottom:10px}'+
  '.lnm{position:fixed;inset:0;z-index:9000;background:var(--bg);overflow:auto;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 40px}.lnm>div{max-width:560px;margin:auto}'+
  '.lnmap{height:240px;border-radius:16px;overflow:hidden;margin:8px 0}'+
@@ -19,7 +19,7 @@ const svc=L=>SV.filter(([k])=>L.svc&&L.svc[k]).map(x=>x[1]).join(' • ')||'—'
 
 function card(L){
  return `<div class="card">${L.img?`<div class="lni" style="background-image:url('${esc(L.img)}')"></div>`:''}
- <div class="row sp"><b>${esc(L.fa)} ← ${esc(L.ta)}</b><span class="tag ${L.scope=='out'?'w':'on'}">${L.scope=='out'?'خارج المحافظة':'داخل المحافظة'}</span></div>
+ <div class="row sp" style="gap:8px;align-items:flex-start;flex-wrap:nowrap;min-width:0"><b style="flex:1;min-width:0;overflow-wrap:anywhere">${esc(L.fa)} ← ${esc(L.ta)}</b><span class="tag ${L.scope=='out'?'w':'on'}" style="flex:none;white-space:nowrap;margin:0">${L.scope=='out'?'خارج المحافظة':'داخل المحافظة'}</span></div>
  <div class="mu">🚐 ${esc(L.car||'ستاركس')}${L.color?' • '+esc(L.color):''}${L.year?' • '+esc(L.year):''} • ${L.seats} مقعد • <b class="${L.free>0?'on':'off'}">${L.free>0?'متاح '+L.free:'مكتمل'}</b></div>
  <div>${days(L)}</div>
  <div class="mu">🕖 الذهاب ${esc(L.t1||'—')}${L.t2?' • العودة '+esc(L.t2):''}</div>
@@ -50,7 +50,7 @@ window.linesV=function(v){
  v.innerHTML=`<button class="l" onclick="go('home')">رجوع</button><h1>🚐 الخطوط</h1>
  <div class="mu">اشترك بمقعد ثابت في سيارة ستاركس (4 أو 10 أو 11 راكب) من سكنك إلى دائرتك أو جامعتك أو شركتك.</div>
  <div class="row" style="gap:8px;margin:10px 0"><button class="${t=='lines'?'big':'l'}" style="flex:1;margin:0;min-height:44px" onclick="LNQ.tab='lines';draw()">الخطوط المتاحة</button><button class="${t=='mine'?'big':'l'}" style="flex:1;margin:0;min-height:44px" onclick="LNQ.tab='mine';draw()">طلباتي${pend?' ('+pend+')':''}</button></div>
- ${t=='lines'?`<div class="row" style="gap:6px;margin:6px 0">${[['all','الكل'],['in','داخل المحافظة'],['out','خارج المحافظة']].map(x=>`<span class="tag ${LNQ.f==x[0]?'on':''}" style="cursor:pointer;padding:7px 14px" onclick="LNQ.f='${x[0]}';draw()">${x[1]}</span>`).join('')}</div>
+ ${t=='lines'?`<div class="row" style="gap:6px;margin:6px 0;flex-wrap:wrap">${[['all','الكل'],['in','داخل المحافظة'],['out','خارج المحافظة']].map(x=>`<span class="tag ${LNQ.f==x[0]?'on':''}" style="cursor:pointer;padding:7px 14px" onclick="LNQ.f='${x[0]}';draw()">${x[1]}</span>`).join('')}</div>
  <input id="lnq" placeholder="ابحث بالمنطقة أو الجامعة أو المحافظة" value="${esc(LNQ.q)}" oninput="LNQ.q=this.value;lnList()"><div id="lnl">${listHtml()}</div><button class="l" style="width:100%;margin-top:10px" onclick="lsAdd()">➕ لم تجد خطك؟ اطلب خطاً جديداً</button>`:mineHtml()+lsMineHtml()}`};
 const lsMineHtml=()=>{const L=Object.values(DB.lsug||{}).sort((a,b)=>b.at-a.at);return L.length?`<h3>طلبات الخطوط الجديدة</h3>`+L.map(x=>`<div class="card"><div class="row sp"><b>${esc(x.fa)} ← ${esc(x.ta)}</b><span class="tag ${x.st==0?'on':''}">${x.st==0?'قيد البحث عن كابتن':x.st==2?'تمت المعالجة':'ملغي'}</span></div><div class="mu">${x.tm?'الوقت: '+esc(x.tm)+' • ':''}المقاعد: ${x.seats}${x.days?' • '+esc(x.days):''}</div>${x.st==0?`<button class="l" onclick="lsClose('${x.id}')">إلغاء</button>`:''}</div>`).join(''):''};
 const lsApi=async b=>{try{const r=await fetch('/api/lsug',{method:'POST',headers:{...H(),'content-type':'application/json'},body:JSON.stringify(b)}),j=await r.json().catch(()=>({}));if(!r.ok)alert(j.e||'تعذر الإرسال');else{await load();draw()}return r.ok}catch(e){alert('تعذر الاتصال')}};
