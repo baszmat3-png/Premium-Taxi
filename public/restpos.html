@@ -215,6 +215,11 @@ input[type=range]{width:160px;accent-color:var(--or)}
 .etac{position:absolute;top:10px;inset-inline-start:10px;z-index:500;background:#fff;border-radius:10px;padding:7px 11px;font-weight:800;font-size:13.5px;box-shadow:0 2px 8px #0003;max-width:calc(100% - 70px)}.etac:empty{display:none}
 .rcb{position:absolute;bottom:calc(92px + env(safe-area-inset-bottom,0px));inset-inline-end:16px;z-index:600;width:50px;height:50px;border-radius:50%;background:#fff;box-shadow:0 2px 10px #0004;font-size:22px}
 .fmh small{display:block;color:var(--mu);font-weight:700;font-size:13.5px}
+.dvk{background:none;border:0;transition:transform 2.9s linear}.nz .dvk,.leaflet-zoom-anim .dvk{transition:none!important}.dvk b{position:relative;display:grid;place-items:center;width:46px;height:46px;border-radius:50%;background:var(--or);font-size:24px;border:3px solid #fff;box-shadow:0 3px 10px #0005}.dvk i{position:absolute;inset:-10px;border-radius:50%;background:#ff6a0033;animation:dvp 1.8s ease-out infinite}@keyframes dvp{0%{transform:scale(.6);opacity:1}100%{transform:scale(1.4);opacity:0}}
+.cmk{background:none;border:0}.cmk b{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:var(--bl);font-size:19px;border:3px solid #fff;box-shadow:0 3px 10px #0005}
+.mvb{position:absolute;bottom:10px;inset-inline-start:10px;z-index:500;display:flex;gap:6px}.mvb button{background:#fff;color:var(--tx);border-radius:10px;padding:8px 11px;font-weight:800;font-size:13.5px;box-shadow:0 2px 8px #0003;white-space:nowrap}.mvb button.a{background:var(--or);color:#fff}
+.fmw .mvb{bottom:calc(90px + env(safe-area-inset-bottom,0px));inset-inline-start:16px}.fmw .mvb button{padding:11px 14px;font-size:15px}
+@media(prefers-reduced-motion:reduce){.dvk i{animation:none}}
 </style></head>
 <body>
 <div id="app"></div><div id="md"></div><div id="ts"></div>
@@ -456,12 +461,12 @@ function pgOd(){const o=DB.orders[ST.od];if(!o){ST.od=null;return PH()?pgOrdersP
  ${mod?`<div class="odb"><span style="font-size:22px">🕒</span><span>وقت تحضير الطعام تم تعديله من <s>${hm(p0)}</s> إلى <b>${hm(o.pt)}</b></span></div>`:''}
  <div class="odc"><div class="odi"><span class="rn">🍽️ ${esc(r.n||'')}</span><span class="big">${num(o)}</span><span>${payT(o)} • ${n} ${itW(n)} • ${hm(o.at)}</span></div>${o.st==1?`<div class="ptc"><button data-a="ptm" data-i="${id}" data-j="-1" aria-label="دقيقة أقل">−</button>${ringH(o,1)}<button data-a="ptm" data-i="${id}" data-j="1" aria-label="دقيقة إضافية">+</button></div>`:ringH(o,1)}</div>
  <div class="odr"><i>👤</i><div class="g2"><small>العميل</small><b>${esc(o.cn||'زبون')}</b></div></div>
- <div class="dvc"><div class="odr"><i>🛵</i><div class="g2"><small>${d?'المندوب'+(d.car?' • '+esc(d.car):''):'مندوب التوصيل'}</small><b>${cTxt(o)}${d&&d.n?` — ${esc(d.n)}`:''}</b></div>${d&&d.ph?`<a href="tel:${esc(d.ph)}" aria-label="اتصال بالمندوب">📞</a>`:''}</div>${mp?`<div class="opb"><i style="width:${cProg(o)}%"></i></div><div class="odm"><div id="mslot"></div><div class="etac" id="etaC">${etaLine(trk(o))}</div><button class="fsb" data-a="fmo" aria-label="تكبير الخريطة">⛶</button></div>`:''}</div>
+ <div class="dvc"><div class="odr"><i>🛵</i><div class="g2"><small>${d?'المندوب'+(d.car?' • '+esc(d.car):''):'مندوب التوصيل'}</small><b>${cTxt(o)}${d&&d.n?` — ${esc(d.n)}`:''}</b></div>${d&&d.ph?`<a href="tel:${esc(d.ph)}" aria-label="اتصال بالمندوب">📞</a>`:''}</div>${mp?`<div class="opb"><i style="width:${cProg(o)}%"></i></div><div class="odm"><div id="mslot"></div><div class="etac" id="etaC">${etaLine(trk(o))}</div>${mvB()}<button class="fsb" data-a="fmo" aria-label="تكبير الخريطة">⛶</button></div>`:''}</div>
  <div class="ol2">${(o.its||[]).map(i=>`<div class="li2"><span class="q2">x${i.q}</span><div class="g2"><b>${esc(i.n)}</b>${i.nt?`<small>** ${esc(i.nt)}</small>`:''}</div><span>${mny(i.q*i.p)}</span></div>`).join('')}</div>
  ${o.note?`<div class="nt">📝 ${esc(o.note)}</div>`:''}
  <div class="odt">${billH(o)}</div>
  ${o.st<=2?`<div class="odf"><div>${mainBtn(o)}</div></div>`:''}</div>`}
-function fmv(){const o=DB.orders[ST.od],t=trk(o);return`<div class="fmv"><div class="fmh"><button class="ib" data-a="fmc" aria-label="رجوع">→</button><div><b>${t&&t.near?(t.pk?'وصل المندوب إلى المطعم':'وصل المندوب إلى الزبون'):t&&t.rem?'الوقت المتبقي: '+minW(t.rem.min):'تتبع المندوب'}</b><small>${t&&t.rem&&!t.near?`الوصول المتوقع ${clk(t.rem.min)} • ${t.rem.km.toFixed(1)} كم ${t.pk?'إلى المطعم':'إلى الزبون'}`:esc((t&&t.d.n)||'')}</small></div></div><div class="fmw"><div id="fslot"></div><button class="rcb" data-a="rcn" aria-label="التركيز على المندوب">🎯</button><button class="b fmb" data-a="fmc">العودة لتفاصيل الطلب</button></div></div>`}
+function fmv(){const o=DB.orders[ST.od],t=trk(o);return`<div class="fmv"><div class="fmh"><button class="ib" data-a="fmc" aria-label="رجوع">→</button><div><b>${t&&t.near?(t.pk?'وصل المندوب إلى المطعم':'وصل المندوب إلى الزبون'):t&&t.rem?'الوقت المتبقي: '+minW(t.rem.min):'تتبع المندوب'}</b><small>${t&&t.rem&&!t.near?`الوصول المتوقع ${clk(t.rem.min)} • ${t.rem.km.toFixed(1)} كم ${t.pk?'إلى المطعم':'إلى الزبون'}`:esc((t&&t.d.n)||'')}</small></div></div><div class="fmw"><div id="fslot"></div>${mvB()}<button class="b fmb" data-a="fmc">العودة لتفاصيل الطلب</button></div></div>`}
 const MAPEL=document.createElement('div');MAPEL.className='odmap';
 /* تتبع المندوب: مقرّب على المندوب ويتبعه، المسار الفعلي على الطرق، ومطابقة موقعه على المسار */
 const minW=n=>n<=1?'دقيقة واحدة':n==2?'دقيقتان':n<=10?n+' دقائق':n+' دقيقة',clk=m=>new Date(Date.now()+m*6e4).toLocaleTimeString('ar-IQ-u-nu-latn',{hour:'numeric',minute:'2-digit'});
@@ -473,14 +478,18 @@ function trk(o){const d=o&&DB.drivers[o.did],r=R();if(!o||!d||!d.loc||o.st<1||o.
  let pos=d.loc,rem=null,line=null;if(rt&&rt.line&&rt.line.length>1){const s=snapL(d.loc,rt.line);if(s.d<=70){pos=s.p;line=[[s.p.lat,s.p.lng],...rt.line.slice(s.i+1)]}else line=[[d.loc.lat,d.loc.lng],[tg.lat,tg.lng]];let km=0;for(let i=0;i<line.length-1;i++)km+=mt({lat:line[i][0],lng:line[i][1]},{lat:line[i+1][0],lng:line[i+1][1]})/1e3;rem={km,min:Math.max(1,Math.round(rt.km>0?rt.min*km/rt.km:km/28*60))}}
  else{const e=eta(d.loc,tg);rem=e&&{km:e.km,min:e.min}}const near=mt(d.loc,tg)<120;return{d,pk,tg,pos,line,rem,near}}
 const etaLine=t=>!t?'':t.near?(t.pk?'وصل المندوب إلى المطعم':'وصل المندوب إلى الزبون'):t.rem?`يصل خلال ${minW(t.rem.min)} • الساعة ${clk(t.rem.min)}`:'';
+const mvB=()=>`<div class="mvb"><button class="${ST.mv!='rest'?'a':''}" data-a="mvd" aria-label="إظهار المندوب وتتبعه">🛵 المندوب</button><button class="${ST.mv=='rest'?'a':''}" data-a="mvr" aria-label="إظهار المطعم">🏪 المطعم</button></div>`;
 function attachMap(){const sl=$('#fslot')||$('#mslot');if(!sl)return;if(MAPEL.parentNode!==sl)sl.appendChild(MAPEL);const o=DB.orders[ST.od],t=trk(o),r=R();if(!t)return;
- MAPEL._fz=ST.fm?17.5:16.5;
- try{showMap(MAPEL,[{p:t.pos,l:'ك',t:'المندوب'},...(t.pk||!o.loc?[]:[{p:o.loc,l:'ز',t:'الزبون'}])],{follow:1,pb:ST.fm?150:40});
-  lf(()=>{const m=MAPEL._m;if(!m)return;if(!MAPEL._my)MAPEL._my=L.layerGroup().addTo(m);const g=MAPEL._my;g.clearLayers();
-   if(t.line&&t.line.length>1){L.polyline(t.line,{color:'#fff',weight:11,opacity:.95,interactive:false}).addTo(g);L.polyline(t.line,{color:'#2457f5',weight:6,opacity:.95,lineCap:'round',lineJoin:'round',interactive:false}).addTo(g)}
-   if(r.loc)L.marker([r.loc.lat,r.loc.lng],{interactive:false,zIndexOffset:500,icon:L.divIcon({className:'rmk',html:'<b>🏪</b><span>'+esc(r.n||'المطعم')+'</span>',iconSize:[46,46],iconAnchor:[23,46]})}).addTo(g);
-   const k=MAPEL._k&&MAPEL._k['ك'];if(k&&k.getElement())k.getElement().classList.add('mvk')});
-  setTimeout(()=>MAPEL._m&&MAPEL._m.invalidateSize(),60)}catch(e){}
+ lf(()=>{try{const m=initMap(MAPEL,t.pos,16),z=ST.fm?17:16;
+  if(!MAPEL._my){MAPEL._my=L.layerGroup().addTo(m);m.on('dragstart',()=>{MAPEL._free=1;document.querySelectorAll('.mvb button').forEach(b=>b.classList.remove('a'))});m.on('zoomstart',()=>MAPEL.classList.add('nz'));m.on('zoomend',()=>setTimeout(()=>MAPEL.classList.remove('nz'),80))}
+  const g=MAPEL._my;g.clearLayers();
+  if(t.line&&t.line.length>1){L.polyline(t.line,{color:'#fff',weight:11,opacity:.95,interactive:false}).addTo(g);L.polyline(t.line,{color:'#2457f5',weight:6,opacity:.95,lineCap:'round',lineJoin:'round',interactive:false}).addTo(g)}
+  const mk=(k,p,ic,zi)=>{if(!p)return;if(!MAPEL[k])MAPEL[k]=L.marker([p.lat,p.lng],{icon:ic,interactive:false,zIndexOffset:zi}).addTo(m);else MAPEL[k].setLatLng([p.lat,p.lng])};
+  mk('_rm',r.loc,L.divIcon({className:'rmk',html:'<b>🏪</b><span>'+esc(r.n||'المطعم')+'</span>',iconSize:[46,46],iconAnchor:[23,46]}),400);
+  if(!t.pk&&o.loc)mk('_cm',o.loc,L.divIcon({className:'cmk',html:'<b>🏠</b>',iconSize:[38,38],iconAnchor:[19,38]}),300);else if(MAPEL._cm){m.removeLayer(MAPEL._cm);MAPEL._cm=null}
+  mk('_dm',t.pos,L.divIcon({className:'dvk',html:'<i></i><b>🛵</b>',iconSize:[46,46],iconAnchor:[23,23]}),1000);
+  if(!MAPEL._free){const c=ST.mv=='rest'&&r.loc?r.loc:t.pos;if(!MAPEL._vw||MAPEL._vw!==ST.mv+z){MAPEL._vw=ST.mv+z;m.setView([c.lat,c.lng],z,{animate:false})}else m.panTo([c.lat,c.lng],{animate:true,duration:1})}
+  setTimeout(()=>m.invalidateSize(),60)}catch(e){}});
  const ch=$('#etaC');if(ch)ch.textContent=etaLine(t)}
 setInterval(()=>{document.querySelectorAll('[data-rg]').forEach(e=>{const pt=+e.dataset.rg,tot=+e.dataset.tot||15;if(!pt)return;const l=Math.ceil((pt-Date.now())/6e4),b=e.querySelector('b'),c=e.querySelector('.rf'),t=l<0?'+'+(-l):''+l;if(b&&b.textContent!==t)b.textContent=t;if(c)c.style.strokeDashoffset=(119.4*(1-Math.max(0,Math.min(1,l/tot)))).toFixed(1);e.classList.toggle('late',l<0);e.classList.toggle('warn',l>=0&&l<=3);const s=e.querySelector('small');if(s)s.textContent=l<0?'تأخير':'دقائق'})},1000);
 const rPct=o=>{const r=R();return o.rpct!=null?+o.rpct:(r.pct!=null&&r.pct!==''?+r.pct:(DB.cfg&&DB.cfg.restPct!=null?+DB.cfg.restPct:10))},rCom=o=>o.rcom!=null&&o.st==4?o.rcom:Math.round(net(o)*rPct(o)/100);
@@ -513,7 +522,7 @@ const A={
  cdel:c=>{const k=(R().items||[]).filter(i=>cat(i)==c).length;if(!confirm(k?'سيتم حذف القسم مع '+k+' صنف بداخله نهائيًا. متابعة؟':'حذف القسم؟'))return;const C={...(R().cs||{})};delete C[c];closeM();if(ST.mc==c)ST.mc=null;act('rests',AUTH.id,{cs:C,items:(R().items||[]).filter(i=>cat(i)!=c)})},
  rr:id=>rrSheet(id),rrs:n=>{ST.rrv=+n;document.querySelectorAll('.rrs button').forEach((b,i)=>b.classList.toggle('a',i<n))},rrt:i=>{const b=document.querySelectorAll('.rrt button')[+i];if(b)b.classList.toggle('a')},
  rrok:id=>{if(!ST.rrv)return toast('اختر عدد النجوم');const t=[...document.querySelectorAll('.rrt button.a')].map(b=>b.textContent);closeM();act('orders',id,{rr:ST.rrv,rrt:t});toast('شكرًا، تم إرسال التقييم')},
- od:id=>{ST.od=id;ST.pg='o';ST.fm=0;draw();scrollTo(0,0);if($('#pg'))$('#pg').scrollTop=0},odx:()=>{ST.od=null;ST.fm=0;draw()},fmo:()=>{ST.fm=1;MAPEL._free=0;draw()},rcn:()=>{MAPEL._free=0;attachMap()},fmc:()=>{ST.fm=0;draw()},
+ od:id=>{ST.od=id;ST.pg='o';ST.fm=0;ST.mv='drv';MAPEL._free=0;MAPEL._vw='';draw();scrollTo(0,0);if($('#pg'))$('#pg').scrollTop=0},odx:()=>{ST.od=null;ST.fm=0;draw()},fmo:()=>{ST.fm=1;MAPEL._free=0;MAPEL._vw='';draw()},rcn:()=>{MAPEL._free=0;attachMap()},mvd:()=>{ST.mv='drv';MAPEL._free=0;MAPEL._vw='';document.querySelectorAll('.mvb button').forEach((b,i)=>b.classList.toggle('a',i==0));attachMap()},mvr:()=>{ST.mv='rest';MAPEL._free=0;MAPEL._vw='';document.querySelectorAll('.mvb button').forEach((b,i)=>b.classList.toggle('a',i==1));attachMap()},fmc:()=>{ST.fm=0;MAPEL._vw='';draw()},
  ptm:(id,d)=>{const o=DB.orders[id];if(!o||o.st!=1)return;act('orders',id,{pt:Math.max(Date.now()+6e4,(o.pt||Date.now())+(+d)*6e4)})},
  dmo4:async()=>{try{const r=await fetch('/api/demo/orders',{method:'POST',headers:H()});const j=await r.json().catch(()=>({}));toast(r.ok?'✅ أُضيفت '+(j.n||4)+' طلبات تجريبية':(j.e||'تعذر الإضافة'));}catch(e){toast('تعذر الاتصال')}},
  nav:p=>{ST.pg=p;ST.drw=0;ST.mc=null;ST.od=null;ST.fm=0;draw()},cm:closeM,
