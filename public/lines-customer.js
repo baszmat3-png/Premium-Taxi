@@ -7,7 +7,7 @@ const SV=[['ac','❄️ تبريد'],['heat','🔥 تدفئة'],['net','📶 إ�
 const LNQ=window.LNQ={tab:'lines',f:'all',q:''};
 
 (function(){const s=document.createElement('style');s.textContent=
- 'html{overflow-x:hidden}@supports(overflow:clip){html{overflow-x:clip}}.lnc{display:inline-block;padding:2px 10px;border-radius:99px;background:rgba(127,127,127,.16);font-size:12px;margin:2px}.lnc.a{background:var(--pr);color:#fff}'+
+ 'html{overflow-x:hidden}@supports(overflow:clip){html{overflow-x:clip}}.lac{margin:-4px 0 8px;border:1px solid rgba(127,127,127,.3);border-radius:12px;overflow:hidden;background:var(--card,#fff);box-shadow:0 6px 18px #0003}.laci{display:flex;gap:10px;align-items:flex-start;width:100%;padding:10px 12px;text-align:start;background:none;border:0;border-bottom:1px solid rgba(127,127,127,.18);color:inherit;font:inherit;cursor:pointer;margin:0;min-height:0}.laci:last-child{border:0}.laci b{display:block;font-size:15px}.laci small{display:block;opacity:.7;font-size:12.5px}.lacm{padding:10px 12px;opacity:.75;font-size:14px}.lnc{display:inline-block;padding:2px 10px;border-radius:99px;background:rgba(127,127,127,.16);font-size:12px;margin:2px}.lnc.a{background:var(--pr);color:#fff}'+
  '.lni{height:130px;border-radius:16px;background:#8883 center/cover;margin-bottom:10px}'+
  '.lnm{position:fixed;inset:0;z-index:9000;background:var(--bg);overflow:auto;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 40px}.lnm>div{max-width:560px;margin:auto}'+
  '.lnmap{height:240px;border-radius:16px;overflow:hidden;margin:8px 0}'+
@@ -86,7 +86,14 @@ window.lnOpen=function(id){
  const cur=k=>{if(S.c)S.c.cur=k;$('#lnA').className=k=='a'?'big':'l';$('#lnB').className=k=='b'?'big':'l'};
  $('#lnA').onclick=()=>cur('a');$('#lnB').onclick=()=>cur('b');
  const fill=(k,p)=>{const i=$(k=='a'?'#lnfa':'#lnta');geoRev(p).then(t=>{if(i&&!i.dataset.m&&t)i.value=t}).catch(()=>{})};
- $('#lnfa').oninput=e=>e.target.dataset.m=1;$('#lnta').oninput=e=>e.target.dataset.m=1;
+ const acW=(inp,k)=>{const box=document.createElement('div');box.className='lac';box.hidden=true;inp.insertAdjacentElement('afterend',box);let tm=0,seq=0;
+  const pick=x=>{const p={lat:x.lat,lng:x.lng};inp.value=x.n+(x.a?' - '+x.a:'');inp.dataset.m=1;box.hidden=true;S.pos[k]=p;S.set[k]=1;if(S.c&&S.c.put)S.c.put(k,p);if(S.c&&S.c.map)S.c.map.setView([p.lat,p.lng],16);if(k=='a'&&!S.set.b)cur('b')};
+  inp.addEventListener('input',()=>{inp.dataset.m=1;clearTimeout(tm);const q=inp.value.trim();if(q.length<2){box.hidden=true;return}
+   tm=setTimeout(async()=>{const my=++seq;box.hidden=false;box.innerHTML='<div class="lacm">جارٍ البحث…</div>';let R=[];try{R=await geoFind(q,S.pos.a||L.from||BG)}catch(e){}if(my!=seq)return;
+    if(!R||!R.length){box.innerHTML='<div class="lacm">لا توجد نتائج — جرّب اسمًا آخر أو حدّد المكان على الخريطة</div>';return}
+    box.innerHTML='';R.slice(0,7).forEach(x=>{const b=document.createElement('button');b.type='button';b.className='laci';b.innerHTML='<span>📍</span><span><b></b><small></small></span>';b.querySelector('b').textContent=x.n;b.querySelector('small').textContent=x.a||'';b.onclick=()=>pick(x);box.appendChild(b)})},400)});
+  inp.addEventListener('blur',()=>setTimeout(()=>box.hidden=true,250));inp.addEventListener('focus',()=>{if(box.children.length&&inp.value.trim().length>1)box.hidden=false})};
+ acW($('#lnfa'),'a');acW($('#lnta'),'b');
  S.c=mapPick($('#lnmap'),L.from||BG,pos=>{for(const k of ['a','b']){const p=pos[k];if(p&&(!S.pos[k]||S.pos[k].lat!=p.lat||S.pos[k].lng!=p.lng)){S.pos[k]={lat:p.lat,lng:p.lng};S.set[k]=1;fill(k,S.pos[k]);if(k=='a'&&!S.set.b)cur('b')}}});
  $('#lnme').onclick=()=>{if(!navigator.geolocation)return alert('الموقع غير متاح على جهازك');navigator.geolocation.getCurrentPosition(g=>{const p={lat:g.coords.latitude,lng:g.coords.longitude};if(S.c.put)S.c.put('a',p);S.pos.a=p;S.set.a=1;fill('a',p);cur('b')},()=>alert('تعذر تحديد موقعك. فعّل الموقع أو حدّده على الخريطة.'),{enableHighAccuracy:true,timeout:12000})};
  $('#lnpf').onchange=async e=>{const f=e.target.files[0];if(!f)return;const s=$('#lnps');s.textContent='جارٍ الرفع…';try{S.pimg=await upl(f,800);s.textContent='تم الرفع ✓'}catch(x){s.textContent='فشل الرفع، أعد المحاولة'}};
