@@ -94,16 +94,18 @@ function rideFare(km, minutes, cfg, typeMult = 1, withPeak = true, now = Date.no
 }
 
 /**
- * أجرة توصيل الطعام (تُحسب من موقع الزبون إلى المطعم، وهي نفسها أجرة العامل وكلفة التوصيل على الزبون)
- *   قريبة: حتى n كم (افتراضي 4)   = 1500
- *   وسط  : أكبر من n وحتى m كم (افتراضي 8) = 2000
- *   بعيدة: أكبر من m كم          = 3000
+ * أجرة توصيل الطعام (من المطعم إلى الزبون، وهي نفسها أجرة عامل التوصيل)
+ *   حتى b كم (افتراضي 5)     = p (افتراضي 2500) — الحد الأدنى
+ *   كل كم بعدها              = + k (افتراضي 300)  → 10 كم = 4000
+ *   x = سقف أعلى اختياري (0 = بدون سقف) • تُقرّب لأقرب 250 للأعلى
  */
 function deliveryFee(km, cfg) {
-  const d = Object.assign({ n: 4, m: 8, p1: 1500, p2: 2000, p3: 3000 }, (cfg && cfg.dl) || {});
-  if (!(km > d.n)) return d.p1;
-  if (!(km > d.m)) return d.p2;
-  return d.p3;
+  const s = (cfg && cfg.dl) || {}, num = (v, d) => (v == null || v === "" || !Number.isFinite(+v)) ? d : +v;
+  const b = num(s.b, 5), p = num(s.p, 2500), k = num(s.k, 300), x = num(s.x, 0);
+  km = +km > 0 ? +km : 0;
+  let f = km <= b ? p : p + (km - b) * k;
+  f = Math.ceil(f / 250) * 250;
+  return x > 0 ? Math.min(f, Math.max(x, p)) : f;
 }
 
 // تصدير للمتصفح وNode
