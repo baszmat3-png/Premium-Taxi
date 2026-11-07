@@ -311,10 +311,10 @@ function setLine(h,k,id,v,old){const r=h['x-role'],i=h['x-id'];if(!/^[A-Za-z0-9_
   const n=cleanLine(v,old);if(!n)return 0;const nw={...(old||{}),...n,id,did:i,at:(old&&old.at)||Date.now(),up:Date.now()};
   if(lineTaken(id)>nw.seats)return 0;db.lines[id]=nw;CV++;return 1}
  if(k=='lreqs'){
-  if(r=='customer'){const c=db.customers[i];if(!c)return 0;
-   if(!old){if(!v||typeof v!='object')return 0;const L=db.lines[S(v.lid,40)];if(!lineLive(L))return 0;
-    const q=Math.round(+v.seats),f=pt(v.from),t=pt(v.to);if(!(q>=1&&q<=L.seats)||q>lineFree(L)||!f||!t)return 0;
-    const ac=Object.values(db.lreqs).filter(x=>x.cid==i&&x.st>=0&&x.st<2);if(ac.length>=5||ac.some(x=>x.lid==L.id))return 0;
+  if(r=='customer'){const c=db.customers[i];if(!c){WHY='سجّل الدخول بحسابك أولًا ثم أعد المحاولة';return 0}
+   if(!old){if(!v||typeof v!='object')return 0;const L=db.lines[S(v.lid,40)];if(!lineLive(L)){WHY='هذا الخط متوقف حاليًا';return 0}
+    const q=Math.round(+v.seats),f=pt(v.from),t=pt(v.to),fr=lineFree(L);if(!f||!t){WHY='حدّد نقطة الانطلاق ونقطة الوصول على الخريطة';return 0}if(!(q>=1&&q<=L.seats)||q>fr){WHY=fr?'المتاح الآن '+fr+' مقعد فقط':'امتلأت مقاعد هذا الخط';return 0}
+    const ac=Object.values(db.lreqs).filter(x=>x.cid==i&&x.st>=0&&x.st<2);if(ac.some(x=>x.lid==L.id)){WHY='لديك طلب سابق على هذا الخط — تابعه من «طلباتي» أو ألغِه لتطلب من جديد';return 0}if(ac.length>=5){WHY='لديك 5 طلبات فعّالة — ألغِ أحدها أولًا';return 0}
     const cn=S(v.cn||c.n||c.name,60);
     db.lreqs[id]={id,lid:L.id,did:L.did,cid:i,cn,cp:S(v.cp||c.ph||c.phone,30),seats:q,from:f,to:t,fa:S(v.fa,120),ta:S(v.ta,120),note:S(v.note,300),pimg:okImg(v.pimg)?v.pimg:'',price:L.price,tot:q*L.price,ll:S(L.fa+' ← '+L.ta,200),st:0,at:Date.now()};
     CV++;PUSH.send('driver',L.did,{t:'🚐 طلب جديد على خطك',b:(cn||'زبون')+' يطلب '+q+' مقعد',u:'/driver.html',tag:'l'+id});return 1}

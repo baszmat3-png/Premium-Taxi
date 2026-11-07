@@ -26,7 +26,7 @@ function card(L){
  <div class="mu">${svc(L)}</div>
  <div class="mu">🧑‍✈️ ${esc(L.dn||'كابتن')}${L.gov?' • '+esc(L.gov):''}</div>
  ${L.note?`<div class="mu">${esc(L.note)}</div>`:''}
- <div class="row sp"><b>${fmt(L.price)} <small>للمقعد</small></b><button class="big" style="width:auto;margin:0;min-height:44px;padding:0 22px" ${L.free>0?`onclick="lnOpen('${esc(L.id)}')"`:'disabled'}>اطلب مقعد</button></div></div>`}
+ <div class="row sp"><b>${fmt(L.price)} <small>للمقعد</small></b>${(()=>{const my=Object.values(DB.lreqs||{}).find(x=>x.lid==L.id&&x.st>=0&&x.st<2);return my?`<button class="l" style="width:auto;margin:0;min-height:44px;padding:0 18px" onclick="LNQ.tab='mine';draw()">${my.st==1?'✅ مقعدك مؤكد':'⏳ طلبك قيد المراجعة'}</button>`:`<button class="big" style="width:auto;margin:0;min-height:44px;padding:0 22px" ${L.free>0?`onclick="lnOpen('${esc(L.id)}')"`:'disabled'}>${L.free>0?'اطلب مقعد':'ممتلئ'}</button>`})()}</div></div>`}
 
 function listHtml(){
  const q=(LNQ.q||'').trim().toLowerCase();
@@ -104,7 +104,7 @@ window.lnOpen=function(id){
   const b=$('#lnok');b.disabled=true;
   const P0=(typeof P!='undefined'&&P)||{};
   const ok=await set('lreqs','q'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),{lid:id,seats:S.n,from:S.pos.a,to:S.pos.b,fa,ta,note:$('#lnnote').value.trim(),pimg:S.pimg,cn:P0.n||'',cp:P0.p||''});
-  if(!ok){b.disabled=false;return alert('تعذر إرسال الطلب. قد تكون المقاعد امتلأت أو لديك طلب سابق على هذا الخط.')}
+  if(!ok){b.disabled=false;return alert(window.LASTE||'تعذر إرسال الطلب. تحقق من الاتصال وأعد المحاولة.')}
   el.remove();LNQ.tab='mine';try{toast('تم إرسال طلبك للكابتن ✅')}catch(e){}go('lines')};
 };
 })();
