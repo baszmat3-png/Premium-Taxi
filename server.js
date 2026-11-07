@@ -283,6 +283,7 @@ function redeem(role,id,code,h){const kind=role=='customer'?'wallet':'cap',key=c
 const lineTaken=(lid,skip)=>Object.values(db.lreqs).reduce((a,x)=>a+(x.lid==lid&&x.st==1&&x.id!=skip?(x.seats||0):0),0);
 const lineFree=(L,skip)=>Math.max(0,(L.seats||0)-lineTaken(L.id,skip));
 const lineLive=L=>!!L&&L.on!==0&&!L.off;
+setTimeout(()=>{try{for(const x of Object.values(db.lreqs||{}))if(x.st>=0&&x.st<2&&!x.dph){const d=db.drivers[x.did];if(d){x.dph=S(d.ph,30);x.dn=x.dn||S(d.n,60)}}}catch(e){}},3000);
 function linesPub(){const o={};for(const[id,L]of Object.entries(db.lines)){if(!lineLive(L))continue;const d=db.drivers[L.did]||{};o[id]={...L,free:lineFree(L),dn:d.n||'',dimg:L.dimg||d.img||''}}return o}
 function cleanLine(v,old){const n={},has=f=>f in v,tm=x=>/^\d{2}:\d{2}$/.test(String(x||''))?String(x):'';
  for(const f of ['from','to']){if(has(f)){const q=pt(v[f]);if(!q)return null;n[f]=q}else if(!old)return null}
@@ -316,7 +317,7 @@ function setLine(h,k,id,v,old){const r=h['x-role'],i=h['x-id'];if(!/^[A-Za-z0-9_
     const q=Math.round(+v.seats),f=pt(v.from),t=pt(v.to),fr=lineFree(L);if(!f||!t){WHY='حدّد نقطة الانطلاق ونقطة الوصول على الخريطة';return 0}if(!(q>=1&&q<=L.seats)||q>fr){WHY=fr?'المتاح الآن '+fr+' مقعد فقط':'امتلأت مقاعد هذا الخط';return 0}
     const ac=Object.values(db.lreqs).filter(x=>x.cid==i&&x.st>=0&&x.st<2);if(ac.some(x=>x.lid==L.id)){WHY='لديك طلب سابق على هذا الخط — تابعه من «طلباتي» أو ألغِه لتطلب من جديد';return 0}if(ac.length>=5){WHY='لديك 5 طلبات فعّالة — ألغِ أحدها أولًا';return 0}
     const cn=S(v.cn||c.n||c.name,60);
-    db.lreqs[id]={id,lid:L.id,did:L.did,cid:i,cn,cp:S(v.cp||c.ph||c.phone,30),seats:q,from:f,to:t,fa:S(v.fa,120),ta:S(v.ta,120),note:S(v.note,300),pimg:okImg(v.pimg)?v.pimg:'',price:L.price,tot:q*L.price,ll:S(L.fa+' ← '+L.ta,200),st:0,at:Date.now()};
+    const dd=db.drivers[L.did]||{};db.lreqs[id]={id,lid:L.id,did:L.did,dn:S(dd.n,60),dph:S(dd.ph,30),cid:i,cn,cp:S(v.cp||c.ph||c.phone,30),seats:q,from:f,to:t,fa:S(v.fa,120),ta:S(v.ta,120),note:S(v.note,300),pimg:okImg(v.pimg)?v.pimg:'',price:L.price,tot:q*L.price,ll:S(L.fa+' ← '+L.ta,200),st:0,at:Date.now()};
     CV++;PUSH.send('driver',L.did,{t:'🚐 طلب جديد على خطك',b:(cn||'زبون')+' يطلب '+q+' مقعد',u:'/driver.html',tag:'l'+id});return 1}
    if(old.cid!=i||!v||v.st!==-1||old.st<0||old.st>1)return 0;
    db.lreqs[id]={...old,st:-1,ca:Date.now()};CV++;PUSH.send('driver',old.did,{t:'ألغى الزبون طلبه',b:(old.cn||'زبون')+' ألغى طلب المقعد',u:'/driver.html',tag:'l'+id});return 1}
