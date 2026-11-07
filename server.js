@@ -297,6 +297,7 @@ function cleanLine(v,old){const n={},has=f=>f in v,tm=x=>/^\d{2}:\d{2}$/.test(St
  if(has('svc')){const q=v.svc||{};n.svc={ac:q.ac?1:0,heat:q.heat?1:0,net:q.net?1:0}}else if(!old)n.svc={ac:0,heat:0,net:0};
  for(const f of ['car','color','plate','year'])if(has(f))n[f]=S(v[f],f=='car'?60:30);
  for(const f of ['img','img2','dimg'])if(has(f)&&okImg(v[f]))n[f]=v[f];
+ if(has('pics'))n.pics=(Array.isArray(v.pics)?v.pics:[]).map(String).filter(x=>/^\/u\/[a-f0-9]{32}\.\w+$/.test(x)).filter((x,i,a)=>a.indexOf(x)==i).slice(0,8);
  if(has('note'))n.note=S(v.note,300);
  if(has('on'))n.on=v.on?1:0;
  return n}
@@ -510,6 +511,27 @@ const rad=x=>x*Math.PI/180,hv=(a,b)=>{const dl=rad(b.lat-a.lat),dg=rad(b.lng-a.l
 let DC=0;/* بيانات تجريبية: كل السجلات تبدأ معرّفاتها بـ demo وتحمل demo:1 وتُحذف بزر واحد */
 const DEMOK=['customers','drivers','rests','rides','orders','apps','wd','topups','ctop','tickets','chat','offers','cards','cardorders','lines','lreqs','lsug','staff','incw'];
 function demoClear(){let n=0;for(const k of DEMOK){const c=db[k];if(!c)continue;for(const id of Object.keys(c))if(id.startsWith('demo')||(c[id]&&c[id].demo)){delete c[id];n++}}IXF=1;save();bump();return n}
+/* 5 خطوط تجريبية بحالات مختلفة (متاح، شبه ممتلئ، مكتمل، خارج المحافظة، طلبات بانتظار الموافقة) */
+function demoLines(){const now=Date.now(),D=864e5,B={lat:33.3152,lng:44.3661},P=(a,g)=>({lat:+(B.lat+a).toFixed(5),lng:+(B.lng+g).toFixed(5)});
+ for(const k of Object.keys(db.lines))if(/^demo_l[1-5]$/.test(k))delete db.lines[k];for(const k of Object.keys(db.lreqs))if(/^demo_q/.test(k))delete db.lreqs[k];
+ db.drivers.demo_d6={...(db.drivers.demo_d6||{}),id:'demo_d6',demo:1,n:'أبو علي (خطوط)',ph:'07801000006',pin:'1111',type:'line',car:'هيونداي ستاركس',plate:'11223 بغداد',bal:20000,on:1,loc:P(.01,.02),locAt:1,rt:4.8,at:now-40*D};
+ db.drivers.demo_d7={...(db.drivers.demo_d7||{}),id:'demo_d7',demo:1,n:'سيف الخفاجي (خطوط)',ph:'07801000007',pin:'1111',type:'line',car:'تويوتا هايس',plate:'44556 بابل',bal:5000,on:1,loc:P(-.03,.01),locAt:1,rt:4.6,at:now-25*D};
+ const L=[
+  {id:'demo_l1',did:'demo_d6',from:P(.012,-.02),to:P(-.008,.012),fa:'المنصور - شارع 14 رمضان',ta:'الجامعة التكنولوجية',scope:'in',gov:'بغداد',seats:11,price:40000,t1:'07:00',t2:'13:30',days:[6,0,1,2,3],svc:{ac:1,heat:1,net:1},car:'هيونداي ستاركس',color:'أبيض',plate:'11223 بغداد',year:'2021',note:'للطالبات فقط • انتظار 3 دقائق عند كل نقطة'},
+  {id:'demo_l2',did:'demo_d6',from:P(.03,.03),to:P(-.01,-.005),fa:'الأعظمية - راغبة خاتون',ta:'وزارة الصحة - باب المعظم',scope:'in',gov:'بغداد',seats:10,price:30000,t1:'07:30',t2:'15:00',days:[0,1,2,3,4],svc:{ac:1,heat:0,net:0},car:'كيا بريجيو',color:'فضي',plate:'55667 بغداد',year:'2018',note:'دوام الموظفين — الأحد إلى الخميس'},
+  {id:'demo_l3',did:'demo_d7',from:P(-.02,.04),to:P(.015,.02),fa:'زيونة - شارع الربيعي',ta:'كلية بغداد للعلوم الاقتصادية',scope:'in',gov:'بغداد',seats:4,price:50000,t1:'08:00',t2:'14:30',days:[6,0,1,2,3,4],svc:{ac:1,heat:1,net:1},car:'تويوتا كامري (VIP)',color:'أسود',plate:'44556 بابل',year:'2022',note:'سيارة صالون 4 ركاب — خدمة VIP'},
+  {id:'demo_l4',did:'demo_d7',from:P(-.04,-.01),to:P(-1.0,.06),fa:'بغداد - الدورة',ta:'الحلة - جامعة بابل',scope:'out',gov:'بابل',seats:11,price:120000,t1:'06:15',t2:'15:30',days:[6,0,1,2,3],svc:{ac:1,heat:1,net:0},car:'تويوتا هايس',color:'أبيض',plate:'44556 بابل',year:'2020',note:'خط بين المحافظات — الانطلاق من ساحة الدورة'},
+  {id:'demo_l5',did:'demo_d6',from:P(.02,-.04),to:P(.6,-.3),fa:'بغداد - الكاظمية',ta:'سامراء - جامعة سامراء',scope:'out',gov:'صلاح الدين',seats:10,price:150000,t1:'06:00',t2:'14:00',days:[6,1,3],svc:{ac:1,heat:1,net:1},car:'هيونداي ستاركس',color:'أبيض',plate:'11223 بغداد',year:'2021',note:'3 أيام في الأسبوع (سبت • اثنين • أربعاء)'}];
+ L.forEach((x,k)=>{db.lines[x.id]={...x,demo:1,on:1,at:now-(10+k*3)*D,up:now-k*36e5}});
+ const C=[['زينب حسن','07701000002'],['نور محمد','07701000004'],['سارة جاسم','07701000006'],['مريم علي','07701000021'],['فاطمة كريم','07701000022'],['حوراء سعد','07701000023'],['آية عباس','07701000024'],['رقية حيدر','07701000025']];
+ let q=0;const R=(lid,seats,st,ci)=>{const Ln=db.lines[lid],dd=db.drivers[Ln.did]||{},id='demo_q'+(q++),c=C[ci%C.length];db.lreqs[id]={id,demo:1,lid,did:Ln.did,dn:dd.n,dph:dd.ph,cid:'demo_c'+(ci%6),cn:c[0],cp:c[1],seats,from:P(.005*ci,-.004*ci),to:Ln.to,fa:'حي '+['اليرموك','الجامعة','العدل','الغزالية','حي الجهاد','البياع','السيدية','العامرية'][ci%8],ta:Ln.ta,note:ci%3==0?'أرجو الاتصال قبل الوصول':'',pimg:'',price:Ln.price,tot:seats*Ln.price,ll:Ln.fa+' ← '+Ln.ta,st,at:now-(ci+1)*36e5,...(st==1?{ok:now-ci*18e5,dn:dd.n,dph:dd.ph}:{})}};
+ R('demo_l1',2,1,0);R('demo_l1',1,1,1);R('demo_l1',1,0,2);R('demo_l1',2,0,3);
+ R('demo_l2',3,1,4);R('demo_l2',3,1,5);R('demo_l2',2,1,6);R('demo_l2',1,0,7);
+ R('demo_l3',2,1,1);R('demo_l3',2,1,2);
+ R('demo_l4',4,1,3);R('demo_l4',1,0,4);
+ R('demo_l5',1,0,5);R('demo_l5',2,2,6);
+ CV++;IXF=1;save();bump();return L.length}
+setTimeout(()=>{try{if(!db.lines.demo_l1)demoLines()}catch(e){console.error('demoLines',e.message)}},4000);
 /* طلبات تجريبية حيّة لجهاز المطعم (4 حالات مختلفة) + حركة مندوبين تجريبيين على الخريطة */
 function demoLive(rid){const R=db.rests[rid];if(!R||!R.loc)return 0;const now=Date.now(),M=6e4,it=n=>(R.items||[]).find(x=>x.n==n)||(R.items||[])[0]||{n:'صنف',p:5000},L=(n,q,nt)=>{const x=it(n);return{n:x.n,q,p:x.p,...(nt?{nt}:{})}},off=(p,km,deg)=>({lat:+(p.lat+km/111*Math.cos(deg)).toFixed(5),lng:+(p.lng+km/93*Math.sin(deg)).toFixed(5)});
  for(const id of Object.keys(db.orders))if(id.startsWith('demo_L')&&db.orders[id].rid==rid)delete db.orders[id];
@@ -526,7 +548,7 @@ function demoRt(k,a,b){if(DRT[k])return DRT[k];const r=DRT[k]={line:[[a.lat,a.ln
 setInterval(()=>{try{let mv=0;const now=Date.now();for(const o of Object.values(db.orders)){if(!o.demo||!o.did||o.st<1||o.st>3)continue;const d=db.drivers[o.did],R=db.rests[o.rid];if(!d||!d.demo||!d.loc||!R||!R.loc)continue;const tg=o.st<3?R.loc:o.loc;if(!tg)continue;
  const r=demoRt(o.id+(o.st<3?'r':'c'),d.loc,tg);if(r.busy)continue;let step=30;while(step>0&&r.i<r.line.length-1){const p=[d.loc.lat,d.loc.lng],q=r.line[r.i+1],m=mtr(p,q);if(m<=step){d.loc={lat:q[0],lng:q[1]};r.i++;step-=m}else{const f=step/m;d.loc={lat:+(p[0]+(q[0]-p[0])*f).toFixed(6),lng:+(p[1]+(q[1]-p[1])*f).toFixed(6)};step=0}}
  if(step<30){d.locAt=now;mv=1}}for(const k of Object.keys(DRT)){const id=k.slice(0,-1),o=db.orders[id];if(!o||o.st>3||o.st<1)delete DRT[k]}if(mv)bump()}catch(e){}},3000);
-function demoSeed(){const r0=demoSeed0();try{demoLive('demo_r0')}catch(e){}return r0}
+function demoSeed(){const r0=demoSeed0();try{demoLive('demo_r0')}catch(e){}try{demoLines()}catch(e){}return r0}
 function demoSeed0(){demoClear();const now=Date.now(),H=36e5,D=864e5,rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1)),pick=a=>a[rnd(0,a.length-1)],B={lat:33.3152,lng:44.3661},near=(r)=>({lat:+(B.lat+(Math.random()-.5)*r).toFixed(5),lng:+(B.lng+(Math.random()-.5)*r).toFixed(5)});
  const AR=['الكرادة','المنصور','زيونة','الجادرية','الأعظمية','الكاظمية','اليرموك','الحارثية','الدورة','البلديات'];
  const C=[['أحمد علي','07701000001'],['زينب حسن','07701000002'],['مصطفى كريم','07701000003'],['نور محمد','07701000004'],['علي عباس','07701000005'],['سارة جاسم','07701000006']];

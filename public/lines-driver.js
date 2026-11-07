@@ -11,6 +11,7 @@ const LD=window.LD={tab:'req'};
  '.lni{height:120px;border-radius:16px;background:#8883 center/cover;margin-bottom:10px}'+
  '.lnm{position:fixed;inset:0;z-index:9000;background:var(--bg);overflow:auto;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 40px}.lnm>div{max-width:560px;margin:auto}'+
  '.lnmap{height:240px;border-radius:16px;overflow:hidden;margin:8px 0}.lnf select,.lnf input{width:100%}'+
+ '.lpg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}.lpt{position:relative;aspect-ratio:1;border-radius:10px;background:#0002 center/cover}.lpt button{position:absolute;top:3px;left:3px;width:26px;height:26px;min-height:0;margin:0;padding:0;border-radius:50%;background:#000a;color:#fff;border:0;font-size:13px;line-height:26px}'+
  '.lnd{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.lnd label{display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:99px;background:rgba(127,127,127,.16);font-size:14px}';
  document.head.appendChild(s)})();
 
@@ -60,7 +61,7 @@ window.lnDel=id=>{if(confirm('حذف هذا الخط؟ ستُلغى الطلبا
 
 /* ---------- نموذج إضافة/تعديل خط ---------- */
 window.lnEdit=function(id){
- const O=id?(DB.lines||{})[id]:null,S={pos:{a:O&&O.from,b:O&&O.to},set:{a:!!O,b:!!O},days:new Set(O?O.days:[6,0,1,2,3]),img:'',img2:'',dimg:''};
+ const O=id?(DB.lines||{})[id]:null,S={pos:{a:O&&O.from,b:O&&O.to},set:{a:!!O,b:!!O},days:new Set(O?O.days:[6,0,1,2,3]),img:'',img2:'',dimg:'',pics:(O&&O.pics||[]).slice()};
  const el=document.createElement('div');el.className='lnm lnf';const $=s=>el.querySelector(s);
  const seats=[4,10,11];if(O&&!seats.includes(O.seats))seats.push(O.seats);
  const v=f=>esc(O&&O[f]!=null?O[f]:'');
@@ -81,6 +82,7 @@ window.lnEdit=function(id){
  <div class="card"><b>الخدمات في السيارة</b><div class="lnd">${SV.map(([k,n])=>`<label><input type="checkbox" data-s="${k}" ${O&&O.svc&&O.svc[k]?'checked':''}>${n}</label>`).join('')}</div></div>
  <div class="card"><b>📷 الصور (اختياري)</b>
   ${[['img','صورة السيارة'],['img2','داخل السيارة'],['dimg','صورتك كابتن']].map(([k,n])=>`<label class="card up" style="margin:8px 0"><span><b>${n}</b><div class="mu" id="up_${k}">${O&&O[k]?'مرفوعة ✓ (اختر لتغييرها)':'اضغط للاختيار'}</div></span><span>📷</span><input type="file" hidden accept="image/*" data-k="${k}"></label>`).join('')}</div>
+ <div class="card"><b>🚐 صور المركبة للزبائن (حتى 8 صور)</b><div class="mu">صور من الخارج والداخل والمقاعد — تظهر للزبون في بطاقة الخط.</div><div class="lpg" id="lpg"></div><label class="l" style="display:flex;justify-content:center;align-items:center;margin-top:8px;cursor:pointer">➕ إضافة صور<input type="file" hidden accept="image/*" multiple id="lpf"></label><div class="mu" id="lpst"></div></div>
  <div class="card"><input id="lnote" placeholder="ملاحظات للركاب (اختياري)" value="${v('note')}"></div>
  <button class="big" id="lok">حفظ الخط</button></div>`;
  document.body.appendChild(el);
@@ -91,6 +93,8 @@ window.lnEdit=function(id){
  $('#lfa').oninput=e=>e.target.dataset.m=1;$('#lta').oninput=e=>e.target.dataset.m=1;
  S.c=mapPick($('#lnmap'),(O&&O.from)||(typeof pos!='undefined'&&pos)||BG,p=>{for(const k of ['a','b']){const q=p[k];if(q&&(!S.pos[k]||S.pos[k].lat!=q.lat||S.pos[k].lng!=q.lng)){S.pos[k]={lat:q.lat,lng:q.lng};S.set[k]=1;fill(k,S.pos[k]);if(k=='a'&&!S.set.b)cur('b')}}},O?{a:O.from,b:O.to}:undefined);
  el.querySelectorAll('input[data-k]').forEach(i=>i.onchange=async()=>{const f=i.files[0];if(!f)return;const k=i.dataset.k,s=$('#up_'+k);s.textContent='جارٍ الرفع…';try{S[k]=await upl(f,1100);s.textContent='تم الرفع ✓'}catch(e){s.textContent='فشل الرفع، أعد المحاولة'}});
+ const pg=()=>{const g=$('#lpg');if(!g)return;g.innerHTML=S.pics.map((u,i)=>`<div class="lpt" style="background-image:url('${esc(u)}')"><button type="button" data-pi="${i}" aria-label="حذف الصورة">✕</button></div>`).join('')||'<div class="mu">لا توجد صور بعد</div>';g.querySelectorAll('[data-pi]').forEach(b=>b.onclick=()=>{S.pics.splice(+b.dataset.pi,1);pg()})};pg();
+ $('#lpf').onchange=async e=>{const F=[...e.target.files].slice(0,8-S.pics.length),st=$('#lpst');if(!F.length){st.textContent='الحد الأقصى 8 صور';return}let k=0;for(const f of F){st.textContent='جارٍ رفع '+(++k)+' من '+F.length+'…';try{S.pics.push(await upl(f,1200));pg()}catch(x){st.textContent='فشل رفع صورة، أعد المحاولة'}}st.textContent=S.pics.length?'تم الرفع ✓ — اضغط «حفظ الخط»':'';e.target.value=''};
  $('#lok').onclick=async()=>{
   const d=[...el.querySelectorAll('input[data-d]')].filter(x=>x.checked).map(x=>+x.dataset.d),price=Math.round(+$('#lpr').value),fa=$('#lfa').value.trim(),ta=$('#lta').value.trim();
   if(!S.set.a||!S.set.b)return alert('حدّد نقطة الانطلاق ونقطة الوصول على الخريطة');
@@ -98,7 +102,7 @@ window.lnEdit=function(id){
   const b=$('#lok');b.disabled=true;
   const sv={};el.querySelectorAll('input[data-s]').forEach(x=>sv[x.dataset.s]=x.checked?1:0);
   const body={from:S.pos.a,to:S.pos.b,fa,ta,scope:$('#lsc').value,gov:$('#lgov').value.trim(),seats:+$('#lse').value,price,days:d,t1:$('#lt1').value,t2:$('#lt2').value,svc:sv,car:$('#lcar').value.trim(),color:$('#lco').value.trim(),plate:$('#lpl').value.trim(),year:$('#lyr').value.trim(),note:$('#lnote').value.trim()};
-  for(const k of ['img','img2','dimg'])if(S[k])body[k]=S[k];
+  for(const k of ['img','img2','dimg'])if(S[k])body[k]=S[k];body.pics=S.pics;
   const ok=await set('lines',id||'l'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),body);
   if(!ok){b.disabled=false;return alert('تعذر حفظ الخط. تأكد من البيانات (ولا يمكن تقليل المقاعد عن عدد الركاب المقبولين).')}
   el.remove();LD.tab='mine';draw()};
